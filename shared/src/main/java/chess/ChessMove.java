@@ -53,29 +53,14 @@ public class ChessMove {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ChessMove chessMove = (ChessMove) o;
-        return Objects.equals(startPosition, chessMove.startPosition) && Objects.equals(endPosition, chessMove.endPosition) && promotionPiece == chessMove.promotionPiece;
+        ChessMove co = (ChessMove) o;
+        return Objects.equals(startPosition, co.startPosition) && Objects.equals(endPosition, co.endPosition) && promotionPiece == co.promotionPiece;
     }
 
     @Override
     public int hashCode() {
         return startPosition.getRow() + startPosition.getColumn() + endPosition.getRow() + endPosition.getColumn() + promotionPiece.hashCode();
     }
-
-//    @Override
-//    public boolean equals(Object obj) {
-//        if(obj == null) {
-//            return false;
-//        }
-//        if(obj == this){
-//            return true;
-//        }
-//        if(obj.getClass() != this.getClass()) {
-//            return false;
-//        }
-//        ChessMove o = (ChessMove) obj;
-//        return (this.startPosition == o.startPosition && this.endPosition == o.endPosition && this.promotionPiece == o.promotionPiece);
-//    }
 
     @Override
     public String toString() {

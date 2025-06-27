@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class PieceMovesCalculator {
-    private static final ArrayList<ChessMove> pieceMoves = new ArrayList<>();
+    private static ArrayList<ChessMove> pieceMoves = new ArrayList<>();
     /**
      * Calculates all the positions a chess piece can move to
      * Does not take into account moves that are illegal due to leaving the king in
@@ -19,7 +19,8 @@ public class PieceMovesCalculator {
         for(int i = currentRow - 1; i <= currentRow + 1; i++) {
             for(int j = currentCol - 1; j <= currentCol + 1; j++) {
                 if(i >= 1 && i <= 8 && j >= 1 && j <= 8) { //if on the board
-                    if(board.getPiece(new ChessPosition(i,j)) == null || board.getPiece(new ChessPosition(i,j)).getTeamColor() != currentColor){ //empty or contains enemy
+                    if(board.getPiece(new ChessPosition(i,j)) == null || board.getPiece(new ChessPosition(i,j)).getTeamColor() != currentColor){
+                        //empty or contains enemy
                         pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(i, j)));
                     }
                 }
@@ -94,47 +95,39 @@ public class PieceMovesCalculator {
         //repeat for negative direction
         //repeat all above for the opposite diagonal
         for (int i = currentRow + 1, j = currentCol + 1; i <= 8 && j <= 8; i++, j++) { //up and right
-            if(board.getPiece(new ChessPosition(i,j)) == null) {
-                pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
-            } else {
-                if(board.getPiece(new ChessPosition(i,j)).getTeamColor() != currentColor) { //enemy piece, can take but blocked after that
-                    pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
-                }
+            if (bishopMove(board, myPosition, currentColor, i, j)) {
                 break;
             }
         }
         for (int i = currentRow - 1, j = currentCol + 1; i >= 1 && j <= 8; i--, j++) { //down and right
-            if(board.getPiece(new ChessPosition(i,j)) == null) {
-                pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
-            } else {
-                if(board.getPiece(new ChessPosition(i,j)).getTeamColor() != currentColor) { //enemy piece, can take but blocked after that
-                    pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
-                }
+            if (bishopMove(board, myPosition, currentColor, i, j)) {
                 break;
             }
         }
         for (int i = currentRow - 1, j = currentCol - 1; i >= 1 && j >= 1; i--, j--) { //down and left
-            if(board.getPiece(new ChessPosition(i,j)) == null) {
-                pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
-            } else {
-                if(board.getPiece(new ChessPosition(i,j)).getTeamColor() != currentColor) { //enemy piece, can take but blocked after that
-                    pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
-                }
+            if (bishopMove(board, myPosition, currentColor, i, j)) {
                 break;
             }
         }
         for (int i = currentRow + 1, j = currentCol - 1; i <= 8 && j >= 1; i++, j--) { //up and left
-            if(board.getPiece(new ChessPosition(i,j)) == null) {
-                pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
-            } else {
-                if(board.getPiece(new ChessPosition(i,j)).getTeamColor() != currentColor) { //enemy piece, can take but blocked after that
-                    pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
-                }
+            if (bishopMove(board, myPosition, currentColor, i, j)) {
                 break;
             }
         }
 
         return pieceMoves;
+    }
+
+    private static boolean bishopMove(ChessBoard board, ChessPosition myPosition, ChessGame.TeamColor currentColor, int i, int j) {
+        if(board.getPiece(new ChessPosition(i,j)) == null) {
+            pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
+        } else {
+            if(board.getPiece(new ChessPosition(i,j)).getTeamColor() != currentColor) { //enemy piece, can take but blocked after that
+                pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
+            }
+            return true;
+        }
+        return false;
     }
 
     public static Collection<ChessMove> knightMovesCalculator(ChessBoard board, int currentCol, int currentRow, ChessGame.TeamColor currentColor){
@@ -179,8 +172,8 @@ public class PieceMovesCalculator {
             }
         }
 
-        //taking a piece diagonally
-        if(currentCol != 1 && board.getPiece(new ChessPosition(currentRow + dir, currentCol - 1)) != null && board.getPiece(new ChessPosition(currentRow + dir, currentCol - 1)).getTeamColor() != currentColor) { //there is a piece available diagonally to take
+        //check if there is a piece available diagonally to the left to take
+        if(currentCol != 1 && board.getPiece(new ChessPosition(currentRow + dir, currentCol - 1)) != null && board.getPiece(new ChessPosition(currentRow + dir, currentCol - 1)).getTeamColor() != currentColor) {
             if(currentRow + dir == 1 || currentRow + dir == 8) {//on last row before promotion and can move forwards
                 promotePawn(currentRow, currentCol, currentRow + dir, currentCol - 1);
             }
@@ -188,7 +181,8 @@ public class PieceMovesCalculator {
                 pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(currentRow + dir, currentCol - 1)));
             }
         }
-        if(currentCol != 8 && board.getPiece(new ChessPosition(currentRow + dir, currentCol + 1)) != null && board.getPiece(new ChessPosition(currentRow + dir, currentCol + 1)).getTeamColor() != currentColor) { //there is a piece available diagonally to take
+        //check if there is a piece available diagonally to the right to take
+        if(currentCol != 8 && board.getPiece(new ChessPosition(currentRow + dir, currentCol + 1)) != null && board.getPiece(new ChessPosition(currentRow + dir, currentCol + 1)).getTeamColor() != currentColor) {
             if(currentRow + dir == 1 || currentRow + dir == 8) {//on last row before promotion and can move forwards
                 promotePawn(currentRow, currentCol, currentRow + dir, currentCol + 1);
             }

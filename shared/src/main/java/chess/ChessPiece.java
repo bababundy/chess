@@ -74,12 +74,6 @@ public class ChessPiece {
         int currentRow = myPosition.getRow();
         int currentCol = myPosition.getColumn();
 
-//        ArrayList<ChessMove> pieceMoves = new ArrayList<>();
-//        pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(currentRow - 1, currentCol - 1)));
-//        System.out.println("{" + currentRow + ", " + currentCol + "}");
-//
-//        return pieceMoves;
-
         return switch (currentType) {
             case KING -> PieceMovesCalculator.kingMovesCalculator(board, currentCol, currentRow, currentColor);
             case QUEEN -> PieceMovesCalculator.queenMovesCalculator(board, currentCol, currentRow, currentColor);
