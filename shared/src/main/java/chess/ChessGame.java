@@ -48,6 +48,11 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
+        //get the type of piece at the start position
+        //get that pieces possible moves
+        //first check that moving it will not create check for the pieces team
+        //repeat some of the moves code to run through until it hits something and try all different directions
+        //if its the king then will have to make sure it doesnt move into check
         throw new RuntimeException("Not implemented");
     }
 

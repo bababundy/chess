@@ -2,6 +2,7 @@ package chess;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Represents a single chess piece
@@ -45,6 +46,20 @@ public class ChessPiece {
         return type;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ChessPiece that = (ChessPiece) o;
+        return pieceColor == that.pieceColor && type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pieceColor, type);
+    }
+
     /**
      * Calculates all the positions a chess piece can move to
      * Does not take into account moves that are illegal due to leaving the king in
@@ -53,6 +68,26 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        return new ArrayList<>();
+        ChessPiece currentPiece = board.getPiece(myPosition);
+        PieceType currentType = currentPiece.getPieceType();
+        ChessGame.TeamColor currentColor = currentPiece.getTeamColor();
+        int currentRow = myPosition.getRow();
+        int currentCol = myPosition.getColumn();
+
+//        ArrayList<ChessMove> pieceMoves = new ArrayList<>();
+//        pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(currentRow - 1, currentCol - 1)));
+//        System.out.println("{" + currentRow + ", " + currentCol + "}");
+//
+//        return pieceMoves;
+
+        return switch (currentType) {
+            case KING -> PieceMovesCalculator.kingMovesCalculator(board, currentCol, currentRow, currentColor);
+            case QUEEN -> PieceMovesCalculator.queenMovesCalculator(board, currentCol, currentRow, currentColor);
+            case ROOK -> PieceMovesCalculator.rookMovesCalculator(board, currentCol, currentRow, currentColor);
+            case BISHOP -> PieceMovesCalculator.bishopMovesCalculator(board, myPosition, currentColor);
+            case KNIGHT -> PieceMovesCalculator.knightMovesCalculator(board, currentCol, currentRow, currentColor);
+            case PAWN -> PieceMovesCalculator.pawnMovesCalculator(board, currentCol, currentRow, currentColor);
+            default -> new ArrayList<>();
+        };
     }
 }

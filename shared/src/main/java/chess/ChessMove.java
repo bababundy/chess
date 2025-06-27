@@ -1,5 +1,7 @@
 package chess;
 
+import java.util.Objects;
+
 /**
  * Represents moving a chess piece on a chessboard
  * <p>
@@ -16,6 +18,10 @@ public class ChessMove {
         this.startPosition = startPosition;
         this.endPosition = endPosition;
         this.promotionPiece = promotionPiece;
+    }
+
+    public ChessMove(ChessPosition startPosition, ChessPosition endPosition) {
+        this(startPosition, endPosition, null);
     }
 
     /**
@@ -40,5 +46,39 @@ public class ChessMove {
      */
     public ChessPiece.PieceType getPromotionPiece() {
         return promotionPiece;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ChessMove chessMove = (ChessMove) o;
+        return Objects.equals(startPosition, chessMove.startPosition) && Objects.equals(endPosition, chessMove.endPosition) && promotionPiece == chessMove.promotionPiece;
+    }
+
+    @Override
+    public int hashCode() {
+        return startPosition.getRow() + startPosition.getColumn() + endPosition.getRow() + endPosition.getColumn() + promotionPiece.hashCode();
+    }
+
+//    @Override
+//    public boolean equals(Object obj) {
+//        if(obj == null) {
+//            return false;
+//        }
+//        if(obj == this){
+//            return true;
+//        }
+//        if(obj.getClass() != this.getClass()) {
+//            return false;
+//        }
+//        ChessMove o = (ChessMove) obj;
+//        return (this.startPosition == o.startPosition && this.endPosition == o.endPosition && this.promotionPiece == o.promotionPiece);
+//    }
+
+    @Override
+    public String toString() {
+        return "E:" + endPosition.toString(); //"S:" + startPosition.toString() +  + promotionPiece
     }
 }
