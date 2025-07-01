@@ -47,7 +47,7 @@ public class ChessBoard {
                 squares[i][j] = null;
             }
         }
-        ChessPiece.PieceType[] backrow = {
+        ChessPiece.PieceType[] backRow = {
                 ChessPiece.PieceType.ROOK,
                 ChessPiece.PieceType.KNIGHT,
                 ChessPiece.PieceType.BISHOP,
@@ -60,8 +60,8 @@ public class ChessBoard {
         for(int i = 0; i<8; i++) {
             squares[1][i] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
             squares[6][i] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
-            squares[0][i] = new ChessPiece(ChessGame.TeamColor.WHITE, backrow[i]);
-            squares[7][i] = new ChessPiece(ChessGame.TeamColor.BLACK, backrow[i]);
+            squares[0][i] = new ChessPiece(ChessGame.TeamColor.WHITE, backRow[i]);
+            squares[7][i] = new ChessPiece(ChessGame.TeamColor.BLACK, backRow[i]);
         }
     }
 

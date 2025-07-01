@@ -11,6 +11,7 @@ import java.util.Collection;
 public class ChessGame {
     private ChessBoard board;
     private TeamColor teamTurn;
+    //store the past moves for castling?
 
     public ChessGame() {
 
