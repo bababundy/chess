@@ -4,7 +4,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class PieceMovesCalculator {
-    private static ArrayList<ChessMove> pieceMoves = new ArrayList<>();
+    private static boolean rightRook;
+    private static boolean leftRook; //not static
+
+    public static void setRightRook(boolean rightRook) {
+        PieceMovesCalculator.rightRook = rightRook;
+    }
+
+    public static void setLeftRook(boolean leftRook) {
+        PieceMovesCalculator.leftRook = leftRook;
+    }
+
+
     /**
      * Calculates all the positions a chess piece can move to
      * Does not take into account moves that are illegal due to leaving the king in
@@ -13,7 +24,7 @@ public class PieceMovesCalculator {
      * @return Collection of valid moves
      */
     public static Collection<ChessMove> kingMovesCalculator(ChessBoard board, int currentCol, int currentRow, ChessGame.TeamColor currentColor){
-        pieceMoves.clear();
+        ArrayList<ChessMove> pieceMoves = new ArrayList<>();
         //for each spot around the king on the board
         //if the spot is empty or contains an enemy then he can move
         for(int i = currentRow - 1; i <= currentRow + 1; i++) {
@@ -26,6 +37,7 @@ public class PieceMovesCalculator {
                 }
             }
         }
+        //if(rightRook && board.getPiece(new ChessPosition(currentRow, currentCol + 1)) == null && board.getPiece(new ChessPosition(currentRow, currentCol + 2)) == null && board.getPiece(new ChessPosition(currentRow, currentCol + 3)) == null)
         return pieceMoves;
     }
 
@@ -38,7 +50,7 @@ public class PieceMovesCalculator {
     }
 
     public static Collection<ChessMove> rookMovesCalculator(ChessBoard board, int currentCol, int currentRow, ChessGame.TeamColor currentColor){
-        pieceMoves.clear();
+        ArrayList<ChessMove> pieceMoves = new ArrayList<>();
         //starting from the rook and positive row
         //until hitting the end of the board or an enemy or teammate
         //repeat for negative direction
@@ -87,51 +99,41 @@ public class PieceMovesCalculator {
     }
 
     public static Collection<ChessMove> bishopMovesCalculator(ChessBoard board, ChessPosition myPosition, ChessGame.TeamColor currentColor){
-        pieceMoves.clear();
-        int currentRow = myPosition.getRow();
-        int currentCol = myPosition.getColumn();
-        //starting from the bishop and positive diagonal
-        //until hitting the end of the board or an enemy or teammate
-        //repeat for negative direction
-        //repeat all above for the opposite diagonal
-        for (int i = currentRow + 1, j = currentCol + 1; i <= 8 && j <= 8; i++, j++) { //up and right
-            if (bishopMove(board, myPosition, currentColor, i, j)) {
-                break;
-            }
+        ArrayList<ChessMove> pieceMoves = new ArrayList<>();
+        int[][] directions = {
+                {1, 1},   // up-right
+                {1, -1},  // up-left
+                {-1, 1},  // down-right
+                {-1, -1}  // down-left
+        };
+        for (int[] dir : directions) {
+            addMovesInDirection(board, myPosition, currentColor, dir[0], dir[1], pieceMoves);
         }
-        for (int i = currentRow - 1, j = currentCol + 1; i >= 1 && j <= 8; i--, j++) { //down and right
-            if (bishopMove(board, myPosition, currentColor, i, j)) {
-                break;
-            }
-        }
-        for (int i = currentRow - 1, j = currentCol - 1; i >= 1 && j >= 1; i--, j--) { //down and left
-            if (bishopMove(board, myPosition, currentColor, i, j)) {
-                break;
-            }
-        }
-        for (int i = currentRow + 1, j = currentCol - 1; i <= 8 && j >= 1; i++, j--) { //up and left
-            if (bishopMove(board, myPosition, currentColor, i, j)) {
-                break;
-            }
-        }
-
         return pieceMoves;
     }
 
-    private static boolean bishopMove(ChessBoard board, ChessPosition myPosition, ChessGame.TeamColor currentColor, int i, int j) {
-        if(board.getPiece(new ChessPosition(i,j)) == null) {
-            pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
-        } else {
-            if(board.getPiece(new ChessPosition(i,j)).getTeamColor() != currentColor) { //enemy piece, can take but blocked after that
-                pieceMoves.add(new ChessMove(myPosition, new ChessPosition(i, j)));
+    private static void addMovesInDirection(ChessBoard board, ChessPosition startPos, ChessGame.TeamColor color, int rowDir, int colDir, ArrayList<ChessMove> moves) {
+        int row = startPos.getRow()+rowDir;
+        int col = startPos.getColumn()+colDir;
+
+        while (row >= 1 && row <= 8 && col >= 1 && col <=8) {
+            ChessPosition newPos = new ChessPosition(row, col);
+            ChessPiece piece = board.getPiece(newPos);
+            if(piece == null){
+                moves.add(new ChessMove(startPos, newPos));
+            } else{
+                if(piece.getTeamColor() != color) {
+                    moves.add(new ChessMove(startPos, newPos));
+                }
+                break;
             }
-            return true;
+            row += rowDir;
+            col += colDir;
         }
-        return false;
     }
 
     public static Collection<ChessMove> knightMovesCalculator(ChessBoard board, int currentCol, int currentRow, ChessGame.TeamColor currentColor){
-        pieceMoves.clear();
+        ArrayList<ChessMove> pieceMoves = new ArrayList<>();
         //check the 8 spots
         //if (they are on the board AND (are empty OR contain an enemy then move))
         int[] iSpots = {1, -1};
@@ -147,7 +149,6 @@ public class PieceMovesCalculator {
                 }
                 if(currentRow+j >= 1 && currentRow+j <= 8 && currentCol+i >= 1 && currentCol+i <= 8) { //if on the board
                     ChessPosition spotToCheck = new ChessPosition(currentRow+j,currentCol+i);
-
                     if(board.getPiece(spotToCheck) == null || board.getPiece(spotToCheck).getTeamColor() != currentColor){
                         //empty or contains enemy
                         pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), spotToCheck));
@@ -155,20 +156,19 @@ public class PieceMovesCalculator {
                 }
             }
         }
-
         return pieceMoves;
     }
 
     public static Collection<ChessMove> pawnMovesCalculator(ChessBoard board, int currentCol, int currentRow, ChessGame.TeamColor currentColor){
         ChessPosition myPosition = new ChessPosition(currentRow, currentCol);
-        pieceMoves.clear();
+        ArrayList<ChessMove> pieceMoves = new ArrayList<>();
         int dir = 1;
         if (currentColor == ChessGame.TeamColor.BLACK) {dir = -1;};
 
         //if the spot in front of it is empty then can move forwards
         if(board.getPiece(new ChessPosition(currentRow + dir, currentCol)) == null) {
             if((dir == -1 && currentRow == 2) || (dir == 1 && currentRow == 7)){//on last row before promotion and can move forwards
-                promotePawn(currentRow, currentCol, currentRow+dir, currentCol);
+                pieceMoves.addAll(promotePawn(currentRow, currentCol, currentRow+dir, currentCol));
             }
             else{
                 pieceMoves.add(new ChessMove(myPosition, new ChessPosition(currentRow + dir, currentCol)));
@@ -184,7 +184,7 @@ public class PieceMovesCalculator {
         if(currentCol != 1 && board.getPiece(new ChessPosition(currentRow + dir, currentCol - 1)) != null
                 && board.getPiece(new ChessPosition(currentRow + dir, currentCol - 1)).getTeamColor() != currentColor) {
             if(currentRow + dir == 1 || currentRow + dir == 8) {//on last row before promotion and can move forwards
-                promotePawn(currentRow, currentCol, currentRow + dir, currentCol - 1);
+                pieceMoves.addAll(promotePawn(currentRow, currentCol, currentRow + dir, currentCol - 1));
             }
             else {
                 pieceMoves.add(new ChessMove(myPosition, new ChessPosition(currentRow + dir, currentCol - 1)));
@@ -194,7 +194,7 @@ public class PieceMovesCalculator {
         if(currentCol != 8 && board.getPiece(new ChessPosition(currentRow + dir, currentCol + 1)) != null
                 && board.getPiece(new ChessPosition(currentRow + dir, currentCol + 1)).getTeamColor() != currentColor) {
             if(currentRow + dir == 1 || currentRow + dir == 8) {//on last row before promotion and can move forwards
-                promotePawn(currentRow, currentCol, currentRow + dir, currentCol + 1);
+                pieceMoves.addAll(promotePawn(currentRow, currentCol, currentRow + dir, currentCol + 1));
             }
             else {
                 pieceMoves.add(new ChessMove(myPosition, new ChessPosition(currentRow + dir, currentCol + 1)));
@@ -203,13 +203,15 @@ public class PieceMovesCalculator {
         return pieceMoves;
     }
 
-    public static void promotePawn (int currentRow, int currentCol, int promotionRow, int promotionCol) {
+    public static Collection<ChessMove> promotePawn (int currentRow, int currentCol, int promotionRow, int promotionCol) {
+        ArrayList<ChessMove> pieceMoves = new ArrayList<>();
         ChessPosition startPosition = new ChessPosition(currentRow, currentCol);
         ChessPosition endPosition = new ChessPosition(promotionRow, promotionCol);
         pieceMoves.add(new ChessMove(startPosition, endPosition, ChessPiece.PieceType.QUEEN));
         pieceMoves.add(new ChessMove(startPosition, endPosition, ChessPiece.PieceType.ROOK));
         pieceMoves.add(new ChessMove(startPosition, endPosition, ChessPiece.PieceType.BISHOP));
         pieceMoves.add(new ChessMove(startPosition, endPosition, ChessPiece.PieceType.KNIGHT));
+        return pieceMoves;
     }
 
 }
