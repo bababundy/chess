@@ -1,5 +1,6 @@
 package chess;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -11,7 +12,6 @@ import java.util.Collection;
 public class ChessGame {
     private ChessBoard board;
     private TeamColor teamTurn;
-    //store the past moves for castling?
 
     public ChessGame() {
 
@@ -49,12 +49,19 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        //get the type of piece at the start position
+        Collection<ChessMove> validMoves = new ArrayList<>();
+        //get the piece at the start position
+        ChessPiece currentPiece = board.getPiece(startPosition);
         //get that pieces possible moves
-        //first check that moving it will not create check for the pieces team
-        //repeat some of the moves code to run through until it hits something and try all different directions
-        //if its the king then will have to make sure it doesnt move into check
-        throw new RuntimeException("Not implemented");
+        Collection<ChessMove> pieceMoves = currentPiece.pieceMoves(board, startPosition);
+        //for each move in possiblemoves
+        for(ChessMove possibleMove : pieceMoves){
+            // (create deep copy of the board and move it?)
+                //if moving != inCheck
+                    //add to new collection
+        }
+
+        return validMoves;
     }
 
     /**
@@ -64,13 +71,19 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
-        //if not in check
-        //squares[endposition] = squares[startposition]
-        //squares[startposition] = null
-        //if not in check after moving then good
-        //else undo the move and throw exception
+        //if move is in valid moves
+        if(validMoves(move.getStartPosition()).contains(move)){
+            //make the actual move in the overload method with the original board passed in
+            makeMove(board, move);
+        }
+    }
 
-        throw new RuntimeException("Not implemented");
+    public void makeMove(ChessBoard workingBoard, ChessMove move) throws InvalidMoveException { //overload that accepts a board
+        workingBoard.addPiece(move.getEndPosition(), workingBoard.getPiece(move.getStartPosition()));
+        workingBoard.removePiece(move.getStartPosition());
+
+        //if moving the king or one of the rooks and the board is the real board
+            // then set their flag in chessPiece to false in order to show that they have been moved
     }
 
     /**
@@ -79,8 +92,12 @@ public class ChessGame {
      * @param teamColor which team to check for check
      * @return True if the specified team is in check
      */
-    public boolean isInCheck(TeamColor teamColor) {
+    public boolean isInCheck(TeamColor teamColor) { //overload with a board
         //for each of the opposite teamcolor pieces, do any of their pieces valid moves include the spot the king is on?
+        //for each spot on the board
+            //if opponent and the opposite color
+                //if their valid moves contain a piece and it's a king
+                    //return true
         throw new RuntimeException("Not implemented");
     }
 
