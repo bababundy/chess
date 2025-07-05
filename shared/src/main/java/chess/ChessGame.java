@@ -179,8 +179,23 @@ public class ChessGame {
      */
     public boolean isInCheckmate(TeamColor teamColor) {
         //if teamcolor is in check
-        //if none of teamcolors pieces have valid moves then checkmate
-        throw new RuntimeException("Not implemented");
+        if(isInCheck(teamColor)){
+            //if none of teamcolors pieces have valid moves then checkmate
+            for(int row = 1; row <= 8; row++) {
+                for(int col = 1; col <= 8; col++) {
+                    //if opponent and the opposite color
+                    ChessPosition currentSpot = new ChessPosition(row, col);
+                    ChessPiece currentPiece = board.getPiece(currentSpot);
+                    if(currentPiece != null && currentPiece.getTeamColor() == teamColor) {
+                        if(!validMoves(currentSpot).isEmpty()) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -192,8 +207,23 @@ public class ChessGame {
      */
     public boolean isInStalemate(TeamColor teamColor) {
         //if not in check
-        //for each piece on the board, do they have any valid moves
-        throw new RuntimeException("Not implemented");
+        if(!isInCheck(teamColor)){
+            //if none of teamcolors pieces have valid moves then stalemate
+            for(int row = 1; row <= 8; row++) {
+                for(int col = 1; col <= 8; col++) {
+                    //if opponent and the opposite color
+                    ChessPosition currentSpot = new ChessPosition(row, col);
+                    ChessPiece currentPiece = board.getPiece(currentSpot);
+                    if(currentPiece != null && currentPiece.getTeamColor() == teamColor) {
+                        if(!validMoves(currentSpot).isEmpty()) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
