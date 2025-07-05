@@ -51,49 +51,21 @@ public class PieceMovesCalculator {
 
     public static Collection<ChessMove> rookMovesCalculator(ChessBoard board, int currentCol, int currentRow, ChessGame.TeamColor currentColor){
         ArrayList<ChessMove> pieceMoves = new ArrayList<>();
+        ChessPosition currentPosition = new ChessPosition(currentRow, currentCol);
+
         //starting from the rook and positive row
         //until hitting the end of the board or an enemy or teammate
         //repeat for negative direction
         //repeat all above for the column direction
-        for (int i = currentRow + 1; i <= 8 ; i++) { //check up
-            if(board.getPiece(new ChessPosition(i,currentCol)) == null) {
-                pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(i, currentCol)));
-            } else if(board.getPiece(new ChessPosition(i,currentCol)).getTeamColor() != currentColor) { //enemy piece
-                pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(i, currentCol)));
-                i = 9;
-            } else { //teammate blocking road
-                i = 9;
-            }
-        }
-        for (int i = currentRow - 1; i >= 1; i--) { //check down
-            if(board.getPiece(new ChessPosition(i,currentCol)) == null) {
-                pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(i, currentCol)));
-            } else if(board.getPiece(new ChessPosition(i,currentCol)).getTeamColor() != currentColor) { //enemy piece
-                pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(i, currentCol)));
-                i = 0;
-            } else { //teammate blocking road
-                i = 0;
-            }
-        }
-        for (int j = currentCol + 1; j <= 8; j++) { //check right
-            if(board.getPiece(new ChessPosition(currentRow,j)) == null) {
-                pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(currentRow,j)));
-            } else if(board.getPiece(new ChessPosition(currentRow,j)).getTeamColor() != currentColor) { //enemy piece
-                pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(currentRow,j)));
-                j = 9;
-            } else { //teammate blocking road
-                j = 9;
-            }
-        }
-        for (int j = currentCol - 1; j >= 1; j--) { //check left
-            if(board.getPiece(new ChessPosition(currentRow,j)) == null) {
-                pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(currentRow,j)));
-            } else if(board.getPiece(new ChessPosition(currentRow,j)).getTeamColor() != currentColor) { //enemy piece
-                pieceMoves.add(new ChessMove(new ChessPosition(currentRow, currentCol), new ChessPosition(currentRow,j)));
-                j = 0;
-            } else { //teammate blocking road
-                j = 0;
-            }
+        int[][] directions = {
+                {1, 0},   // up
+                {-1, 0},  //down
+                {0, 1},   // right
+                {0, -1}   // left
+        };
+
+        for (int[] dir : directions) {
+            addMovesInDirection(board, currentPosition, currentColor, dir[0], dir[1], pieceMoves);
         }
         return pieceMoves;
     }
@@ -101,10 +73,10 @@ public class PieceMovesCalculator {
     public static Collection<ChessMove> bishopMovesCalculator(ChessBoard board, ChessPosition myPosition, ChessGame.TeamColor currentColor){
         ArrayList<ChessMove> pieceMoves = new ArrayList<>();
         int[][] directions = {
-                {1, 1},   // up-right
+                {1, 1},   //up-right
                 {1, -1},  // up-left
                 {-1, 1},  // down-right
-                {-1, -1}  // down-left
+                {-1, -1}  //down-left
         };
         for (int[] dir : directions) {
             addMovesInDirection(board, myPosition, currentColor, dir[0], dir[1], pieceMoves);
