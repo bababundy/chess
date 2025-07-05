@@ -2,6 +2,7 @@ package chess;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * For a class that can manage a chess game, making moves on a board
@@ -10,11 +11,12 @@ import java.util.Collection;
  * signature of the existing methods.
  */
 public class ChessGame {
-    private ChessBoard board;
+    private ChessBoard board = new ChessBoard();
     private TeamColor teamTurn;
 
     public ChessGame() {
-
+        board.resetBoard();
+        teamTurn = TeamColor.WHITE;
     }
 
     /**
@@ -48,19 +50,26 @@ public class ChessGame {
      * @return Set of valid moves for requested piece, or null if no piece at
      * startPosition
      */
-    public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        Collection<ChessMove> validMoves = new ArrayList<>();
-        //get the piece at the start position
-        ChessPiece currentPiece = board.getPiece(startPosition);
-        //get that pieces possible moves
-        Collection<ChessMove> pieceMoves = currentPiece.pieceMoves(board, startPosition);
-        //for each move in possiblemoves
-        for(ChessMove possibleMove : pieceMoves){
-            // (create deep copy of the board and move it?)
-                //if moving != inCheck
-                    //add to new collection
-        }
+    public Collection<ChessMove> validMoves(ChessPosition startPosition){
+        return validMoves(board, startPosition);
+    }
 
+    public Collection<ChessMove> validMoves(ChessBoard workingBoard, ChessPosition startPosition){
+        Collection<ChessMove> validMoves = new ArrayList<>();
+        ChessPiece currentPiece = workingBoard.getPiece(startPosition); //get the piece at the start position
+        if (currentPiece == null) return null;
+        Collection<ChessMove> pieceMoves = currentPiece.pieceMoves(workingBoard, startPosition); //get that pieces possible moves
+        for(ChessMove possibleMove : pieceMoves){ //for each move in pieceMoves
+            ChessBoard copyBoard = workingBoard.clone(); // (create deep copy of the board and move it?)
+            try {
+                makeMove(copyBoard, possibleMove);
+                if (!isInCheck(copyBoard, currentPiece.getTeamColor())) {
+                    validMoves.add(possibleMove);
+                }
+            } catch (InvalidMoveException e) {
+                //ignore
+            }
+        }
         return validMoves;
     }
 
@@ -71,17 +80,54 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
-        //if move is in valid moves
-        if(validMoves(move.getStartPosition()).contains(move)){
-            //make the actual move in the overload method with the original board passed in
-            makeMove(board, move);
-        }
+        makeMove(board, move);
     }
 
     public void makeMove(ChessBoard workingBoard, ChessMove move) throws InvalidMoveException { //overload that accepts a board
-        workingBoard.addPiece(move.getEndPosition(), workingBoard.getPiece(move.getStartPosition()));
-        workingBoard.removePiece(move.getStartPosition());
+        ChessPiece currentPiece = workingBoard.getPiece(move.getStartPosition());
+        if(currentPiece == null) {
+            throw new InvalidMoveException();
+        }
+        Collection<ChessMove> pieceMoves = currentPiece.pieceMoves(workingBoard, move.getStartPosition());
 
+        if(workingBoard == this.board && currentPiece.getTeamColor() == teamTurn) {
+            if(pieceMoves.contains(move)){
+                workingBoard.removePiece(move.getEndPosition());
+                if(move.getPromotionPiece() != null){
+                    workingBoard.addPiece(move.getEndPosition(), new ChessPiece(teamTurn, move.getPromotionPiece()));
+                } else {
+                    workingBoard.addPiece(move.getEndPosition(), workingBoard.getPiece(move.getStartPosition()));
+                }
+                workingBoard.removePiece(move.getStartPosition());
+            } else{
+                throw new InvalidMoveException();
+            }
+            if (isInCheck(workingBoard, teamTurn)) {
+                throw new InvalidMoveException("In Check");
+            }
+            if(teamTurn == TeamColor.WHITE){
+                teamTurn = TeamColor.BLACK;
+            } else {
+                teamTurn = TeamColor.WHITE;
+            }
+        } else if (workingBoard == this.board && currentPiece.getTeamColor() != teamTurn) {
+            throw new InvalidMoveException("Incorrect Turn");
+        } else {
+            if (pieceMoves.contains(move)) {
+                workingBoard.removePiece(move.getEndPosition());
+                if (move.getPromotionPiece() != null) {
+                    workingBoard.addPiece(move.getEndPosition(), new ChessPiece(teamTurn, move.getPromotionPiece()));
+                } else {
+                    workingBoard.addPiece(move.getEndPosition(), workingBoard.getPiece(move.getStartPosition()));
+                }
+                workingBoard.removePiece(move.getStartPosition());
+            } else {
+                throw new InvalidMoveException();
+            }
+            if (isInCheck(workingBoard, teamTurn)) {
+                throw new InvalidMoveException("In Check");
+            }
+        }
         //if moving the king or one of the rooks and the board is the real board
             // then set their flag in chessPiece to false in order to show that they have been moved
     }
@@ -93,12 +139,36 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) { //overload with a board
-        //for each of the opposite teamcolor pieces, do any of their pieces valid moves include the spot the king is on?
+        return isInCheck(board, teamColor);
+    }
+
+    /**
+     * Determines if the given team is in check
+     *
+     * @param workingBoard the board state to check
+     * @param teamColor which team to check for check
+     * @return True if the specified team is in check
+     */
+    public boolean isInCheck(ChessBoard workingBoard, TeamColor teamColor) { //overload with a board
         //for each spot on the board
-            //if opponent and the opposite color
-                //if their valid moves contain a piece and it's a king
-                    //return true
-        throw new RuntimeException("Not implemented");
+        for(int row = 1; row <= 8; row++) {
+            for(int col = 1; col <= 8; col++) {
+                //if opponent and the opposite color
+                ChessPosition currentSpot = new ChessPosition(row, col);
+                ChessPiece currentPiece = workingBoard.getPiece(currentSpot);
+                if(currentPiece != null && currentPiece.getTeamColor() != teamColor) {
+                    //if their valid moves contain a piece and it's a king
+                    Collection<ChessMove> dangerSpots = currentPiece.pieceMoves(workingBoard, currentSpot);
+                    for(ChessMove danger : dangerSpots){
+                        ChessPiece target = workingBoard.getPiece(danger.getEndPosition());
+                        if(target != null && target.getPieceType() == ChessPiece.PieceType.KING) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -142,5 +212,19 @@ public class ChessGame {
      */
     public ChessBoard getBoard() {
         return board;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ChessGame chessGame = (ChessGame) o;
+        return Objects.equals(board, chessGame.board) && teamTurn == chessGame.teamTurn;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(board, teamTurn);
     }
 }
