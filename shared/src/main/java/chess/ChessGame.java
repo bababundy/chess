@@ -57,7 +57,7 @@ public class ChessGame {
     public Collection<ChessMove> validMoves(ChessBoard workingBoard, ChessPosition startPosition){
         Collection<ChessMove> validMoves = new ArrayList<>();
         ChessPiece currentPiece = workingBoard.getPiece(startPosition); //get the piece at the start position
-        if (currentPiece == null) return null;
+        if (currentPiece == null) {return null;}
         //get that pieces possible moves
         Collection<ChessMove> pieceMoves = currentPiece.pieceMoves(workingBoard, startPosition);
         for(ChessMove possibleMove : pieceMoves){ //for each move in pieceMoves
@@ -149,14 +149,17 @@ public class ChessGame {
                 //if opponent and the opposite color
                 ChessPosition currentSpot = new ChessPosition(row, col);
                 ChessPiece currentPiece = workingBoard.getPiece(currentSpot);
-                if(currentPiece != null && currentPiece.getTeamColor() != teamColor) {
-                    //if their valid moves contain a piece and it's a king
-                    Collection<ChessMove> dangerSpots = currentPiece.pieceMoves(workingBoard, currentSpot);
-                    for(ChessMove danger : dangerSpots){
-                        ChessPiece target = workingBoard.getPiece(danger.getEndPosition());
-                        if(target != null && target.getPieceType() == ChessPiece.PieceType.KING) {
-                            return true;
-                        }
+                if (currentPiece == null || currentPiece.getTeamColor() == teamColor) {
+                    continue;
+                }
+
+                Collection<ChessMove> dangerSpots = currentPiece.pieceMoves(workingBoard, currentSpot);
+                for (ChessMove danger : dangerSpots) {
+                    ChessPiece target = workingBoard.getPiece(danger.getEndPosition());
+                    if (target != null &&
+                            target.getPieceType() == ChessPiece.PieceType.KING &&
+                            target.getTeamColor() == teamColor) {
+                        return true;
                     }
                 }
             }

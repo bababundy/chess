@@ -37,7 +37,9 @@ public class PieceMovesCalculator {
                 }
             }
         }
-        //if(rightRook && board.getPiece(new ChessPosition(currentRow, currentCol + 1)) == null && board.getPiece(new ChessPosition(currentRow, currentCol + 2)) == null && board.getPiece(new ChessPosition(currentRow, currentCol + 3)) == null)
+        //if(rightRook && board.getPiece(new ChessPosition(currentRow, currentCol + 1)) == null
+        // && board.getPiece(new ChessPosition(currentRow, currentCol + 2)) == null
+        // && board.getPiece(new ChessPosition(currentRow, currentCol + 3)) == null)
         return pieceMoves;
     }
 
@@ -84,7 +86,8 @@ public class PieceMovesCalculator {
         return pieceMoves;
     }
 
-    private static void addMovesInDirection(ChessBoard board, ChessPosition startPos, ChessGame.TeamColor color, int rowDir, int colDir, ArrayList<ChessMove> moves) {
+    private static void addMovesInDirection(ChessBoard board, ChessPosition startPos, ChessGame.TeamColor color,
+                                            int rowDir, int colDir, ArrayList<ChessMove> moves) {
         int row = startPos.getRow()+rowDir;
         int col = startPos.getColumn()+colDir;
 
