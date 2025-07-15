@@ -1,7 +1,21 @@
 package service;
 
+import dataaccess.DataAccessException;
+import dataaccess.localStorage.UserDatabase;
+import model.AuthData;
+import model.UserData;
+import requests.LoginRequest;
+import requests.LogoutRequest;
+import requests.RegisterRequest;
+import results.LoginResult;
+import results.LogoutResult;
+import results.RegisterResult;
+import dataaccess.*;
+
+import java.util.UUID;
+
 public class UserService {
-    RegisterResult register(RegisterRequest req) {
+    public static RegisterResult register(RegisterRequest req) {
         //1. verify input
         //2. check if username is already taken
         //3. create new user model object
@@ -11,16 +25,29 @@ public class UserService {
         return new RegisterResult(null, null, null);
     }
 
-    LoginResult login(LoginRequest req) {
+    public static LoginResult login(LoginRequest req) throws DataAccessException {
+        String username = req.username();
         //1. verify input
-        //2. check if password is correct
-        //3. database UserDao.getUser(u)
-        //4. login the new user (create new AuthToken model object, insert into database)
-        //5. create result and return
-        return new LoginResult(null, null, null);
+        if (username == null || req.password() == null) {
+            throw new DataAccessException("Missing username or password");
+        }
+
+        //2. database UserDao.getUser(u) and check if password is correct
+        UserData user = UserDao.getUser(username);
+        if (user == null || !user.password().equals(req.password())) {
+            throw new DataAccessException("Invalid username or password");
+        }
+
+        //3.login the new user (create new AuthData model object, insert into database)
+        String userAuthToken = UUID.randomUUID().toString();
+        AuthData userAuthData = new AuthData(userAuthToken, username);
+        AuthDao.createAuthUser(userAuthData);
+
+        //4. create result and return
+        return new LoginResult(username, userAuthToken, null);
     }
 
-    LogoutResult logout(LogoutRequest req) {
+    public static LogoutResult logout(LogoutRequest req) {
         //1. verify input
         //1.5 validate authToken
         //4. insert new user into database UserDao.createUser(u)

@@ -1,11 +1,17 @@
 package service;
 
 import model.GameData;
+import requests.CreateRequest;
+import requests.JoinRequest;
+import requests.ListRequest;
+import results.CreateResult;
+import results.JoinResult;
+import results.ListResult;
 
 import java.util.ArrayList;
 
 public class GameService {
-    CreateResult create(CreateRequest r) {
+    public static CreateResult create(CreateRequest r) {
         //1. verify input
         //1.5 validate authToken
         //2. check if gameName is already taken
@@ -16,7 +22,7 @@ public class GameService {
         return new CreateResult(null, null);
     }
 
-    JoinResult join(JoinRequest r) {
+    public static JoinResult join(JoinRequest r) {
         //1. verify input
         //2 validate authToken
         //3. check if username is already taken in game
@@ -26,7 +32,7 @@ public class GameService {
         return new JoinResult(null);
     }
 
-    ListResult list(ListRequest r) {
+    public static ListResult list(ListRequest r) {
         //1. verify input
         //2 validate authToken
         //3. create new arraylist

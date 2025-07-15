@@ -1,3 +1,3 @@
 package requests;
 
-public record JoinRequest (String playerColor, String gameID){}
+public record JoinRequest (String authToken, String playerColor, String gameID){}
