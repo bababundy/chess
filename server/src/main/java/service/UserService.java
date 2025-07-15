@@ -12,17 +12,43 @@ import results.LogoutResult;
 import results.RegisterResult;
 import dataaccess.*;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class UserService {
-    public static RegisterResult register(RegisterRequest req) {
+    private static UserDao userDAO = new UserDao();
+    private AuthDao authDAO;
+
+    public static RegisterResult register(RegisterRequest req) throws DataAccessException {
+        String username = req.username();
+        String password = req.password();
+        String email = req.email();
+
         //1. verify input
+        if (username == null || password == null || email == null) {
+            throw new DataAccessException("Missing input field");
+        }
+
         //2. check if username is already taken
-        //3. create new user model object
-        //4. insert new user into database UserDao.createUser(u)
+        try {
+            UserData user = UserDao.getUser(username);
+            throw new DataAccessException("Username already taken");
+        } catch(DataAccessException e) {
+            if(Objects.equals(e.getMessage(), "user not found")){
+                //username available
+            } else{
+                throw new DataAccessException("Username already taken");
+            }
+        }
+
+        //3. create new user model object insert new user into database
+        userDAO.createUser(new UserData(username, password, email));
+
         //5. login the new user (create new AuthToken model object, insert into database)
+        var result = login(new LoginRequest(username, password));
+
         //6. create registerresult and return
-        return new RegisterResult(null, null, null);
+        return new RegisterResult(result.username(), result.authToken(), null);
     }
 
     public static LoginResult login(LoginRequest req) throws DataAccessException {
@@ -32,7 +58,7 @@ public class UserService {
             throw new DataAccessException("Missing username or password");
         }
 
-        //2. database UserDao.getUser(u) and check if password is correct
+        //2. check if password is correct
         UserData user = UserDao.getUser(username);
         if (user == null || !user.password().equals(req.password())) {
             throw new DataAccessException("Invalid username or password");

@@ -35,13 +35,19 @@ public class Server {
         Spark.awaitStop();
     }
 
-//    private Object register (Request req, Response res) throws DataAccessException {
-//        RegisterRequest request = new Gson().fromJson(req.body(), RegisterRequest.class);
-//        var result = UserService.register(request);
-//        res.status(200);
-//        return new Gson().toJson(result);
-//    }
-//
+    private Object register (Request req, Response res) throws DataAccessException {
+        RegisterRequest request = new Gson().fromJson(req.body(), RegisterRequest.class);
+        try{
+            var result = UserService.register(request);
+            res.status(200);
+            return new Gson().toJson(result);
+        } catch (DataAccessException e) {
+            LoginResult result = new LoginResult(null, null, "Error: username already taken");
+            res.status(401);
+            return new Gson().toJson(result);
+        }
+    }
+
     private Object login (Request req, Response res) throws DataAccessException {
         LoginRequest request = new Gson().fromJson(req.body(), LoginRequest.class);
         try{

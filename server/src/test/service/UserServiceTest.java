@@ -3,17 +3,12 @@ package service;
 import dataaccess.AuthDao;
 import dataaccess.DataAccessException;
 import dataaccess.UserDao;
-import dataaccess.localStorage.AuthDatabase;
-import dataaccess.localStorage.UserDatabase;
 import model.UserData;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import requests.*;
-import results.*;
 import results.LoginResult;
-import server.Server;
+import results.RegisterResult;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,6 +23,37 @@ class UserServiceTest {
         authdao = new AuthDao();
         UserData user = new UserData("kolt", "password", "kolt@example.com");
         userdao.createUser(user);
+    }
+
+    @Test
+    void nullRegister() throws DataAccessException {
+        RegisterRequest request = new RegisterRequest(null, null, null);
+        DataAccessException ex = assertThrows(DataAccessException.class, () -> {
+            UserService.register(request);
+        });
+        assertTrue(ex.getMessage().contains("Missing"));
+    }
+
+    @Test
+    void usernameAlreadyTaken() throws DataAccessException {
+        RegisterRequest request = new RegisterRequest("kolt", "password2", "kolt@example.com");
+        DataAccessException ex = assertThrows(DataAccessException.class, () -> {
+            UserService.register(request);
+        });
+        assertTrue(ex.getMessage().contains("taken"));
+    }
+
+    @Test
+    void validRegistration() throws DataAccessException {
+        RegisterRequest request = new RegisterRequest("kolt2", "password", "kolt@example.com");
+        RegisterResult result = UserService.register(request);
+
+        assertNotNull(result);
+        assertEquals("kolt2", result.username());
+        assertNotNull(result.authToken());
+        assertFalse(result.authToken().isBlank());
+
+        assertNotNull(AuthDao.getAuthUser(result.authToken()));
     }
 
     @Test
