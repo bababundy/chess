@@ -18,9 +18,9 @@ public class Server {
         Spark.staticFiles.location("web");
 
         // Register your endpoints and handle exceptions here.
-//        Spark.post("/user", this::register);
+        Spark.post("/user", this::register);
         Spark.post("/session", this::login);
-//        Spark.delete("/session", this::logout);
+        Spark.delete("/session", this::logout);
 //        Spark.get("/game", this::listGames);
 //        Spark.post("/game", this::createGame);
 //        Spark.put("/game", this::joinGame);
@@ -60,14 +60,20 @@ public class Server {
             return new Gson().toJson(result);
         }
     }
-//
-//    private Object logout (Request req, Response res) throws DataAccessException {
-//        String authToken = req.headers("authToken");
-//        LogoutRequest request = new LogoutRequest(authToken);
-//        var result = UserService.logout(request);
-//        res.status(200);
-//        return new Gson().toJson(result);
-//    }
+
+    private Object logout (Request req, Response res) throws DataAccessException {
+        String authToken = req.headers("authToken");
+        LogoutRequest request = new LogoutRequest(authToken);
+        try{
+            LogoutResult result = UserService.logout(request);
+            res.status(200);
+            return new Gson().toJson(res);
+        } catch (DataAccessException e) {
+            LogoutResult result = new LogoutResult("Error: unauthorized");
+            res.status(401);
+            return new Gson().toJson(result);
+        }
+    }
 //
 //    private Object listGames (Request req, Response res) throws DataAccessException {
 //        String authToken = req.headers("authToken");

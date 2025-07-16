@@ -17,7 +17,7 @@ import java.util.UUID;
 
 public class UserService {
     private static UserDao userDAO = new UserDao();
-    private AuthDao authDAO;
+    private static AuthDao authDAO = new AuthDao();
 
     public static RegisterResult register(RegisterRequest req) throws DataAccessException {
         String username = req.username();
@@ -60,7 +60,7 @@ public class UserService {
 
         //2. check if password is correct
         UserData user = UserDao.getUser(username);
-        if (user == null || !user.password().equals(req.password())) {
+        if (!user.password().equals(req.password())) {
             throw new DataAccessException("Invalid username or password");
         }
 
@@ -73,16 +73,23 @@ public class UserService {
         return new LoginResult(username, userAuthToken, null);
     }
 
-    public static LogoutResult logout(LogoutRequest req) {
+    public static LogoutResult logout(LogoutRequest req) throws DataAccessException {
         //1. verify input
-        //1.5 validate authToken
-        //4. insert new user into database UserDao.createUser(u)
-        //5. logout the new user (remove authToken model from database)
-        //6. create result and return
+        String authToken = req.authToken();
+        if (authToken == null) {
+            throw new DataAccessException("Missing authToken");
+        }
+        //2. validate authToken
+        String username;
+        try{username = authDAO.getUsername(authToken);}
+        catch (DataAccessException e) {
+            throw new DataAccessException("Invalid AuthToken");
+        }
+        //3. logout the new user (remove authToken model from database)
+        authDAO.deleteAuthUser(new AuthData(authToken, username));
+
+
+        //4. create result and return
         return new LogoutResult(null);
     }
-
-    //create UUID authtoken method here
 }
-
-

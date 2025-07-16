@@ -2,17 +2,16 @@ package dataaccess;
 
 import dataaccess.localStorage.AuthDatabase;
 import model.AuthData;
-import org.eclipse.jetty.server.Authentication;
 
 public class AuthDao {
     private static AuthDatabase db = new AuthDatabase();
 
     public static void createAuthUser(AuthData user) throws DataAccessException {
-        AuthDatabase.createAuthUser(user);
+        db.createAuthUser(user);
     }
 
     public static AuthData getAuthUser(String username) throws DataAccessException {
-        AuthData user = AuthDatabase.getUsername(username);
+        AuthData user = db.getByUsername(username);
         if(user == null) {
             throw new DataAccessException("user not found");
         } else{
@@ -20,5 +19,17 @@ public class AuthDao {
         }
     }
 
-    public void updateAuthUser(Authentication.User u) throws DataAccessException {}
+    public void updateAuthUser(AuthData user) throws DataAccessException {}
+
+    public String getUsername (String authToken) throws DataAccessException {
+        return db.getByToken(authToken).username();
+    }
+
+    public String getAuthToken (String username) throws DataAccessException {
+        return db.getByUsername(username).authToken();
+    }
+
+    public void deleteAuthUser(AuthData user) {
+        db.deleteAuthUser(user);
+    }
 }

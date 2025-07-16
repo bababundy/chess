@@ -3,11 +3,13 @@ package service;
 import dataaccess.AuthDao;
 import dataaccess.DataAccessException;
 import dataaccess.UserDao;
+import model.AuthData;
 import model.UserData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import requests.*;
 import results.LoginResult;
+import results.LogoutResult;
 import results.RegisterResult;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,7 +55,7 @@ class UserServiceTest {
         assertNotNull(result.authToken());
         assertFalse(result.authToken().isBlank());
 
-        assertNotNull(AuthDao.getAuthUser(result.authToken()));
+        assertNotNull(AuthDao.getAuthUser(result.username()));
     }
 
     @Test
@@ -84,8 +86,37 @@ class UserServiceTest {
         assertNotNull(result.authToken());
         assertFalse(result.authToken().isBlank());
 
-        assertNotNull(AuthDao.getAuthUser(result.authToken()));
+        assertNotNull(AuthDao.getAuthUser(result.username()));
     }
 
+    @Test
+    void invalidLogout() throws DataAccessException {
+        LogoutRequest request = new LogoutRequest("abcd1234");
+        DataAccessException ex = assertThrows(DataAccessException.class, () -> {
+            UserService.logout(request);
+        });
+        assertTrue(ex.getMessage().contains("Invalid"));
+    }
 
+    @Test
+    void nullLogout() throws DataAccessException {
+        LogoutRequest request = new LogoutRequest(null);
+        DataAccessException ex = assertThrows(DataAccessException.class, () -> {
+            UserService.logout(request);
+        });
+        assertTrue(ex.getMessage().contains("Missing"));
+    }
+
+    @Test
+    void validLogout() throws DataAccessException {
+        LoginRequest request = new LoginRequest("kolt", "password");
+        LoginResult loginResult = UserService.login(request);
+        LogoutResult result = UserService.logout(new LogoutRequest(loginResult.authToken()));
+
+        assertNull(result.message());
+        DataAccessException ex = assertThrows(DataAccessException.class, () -> {
+            AuthDao.getAuthUser("kolt");
+        });
+        assertTrue(ex.getMessage().contains("not found"));
+    }
 }

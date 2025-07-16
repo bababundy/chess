@@ -1,5 +1,6 @@
 package dataaccess.localStorage;
 
+import dataaccess.DataAccessException;
 import model.AuthData;
 
 import java.util.ArrayList;
@@ -12,26 +13,31 @@ public class AuthDatabase {
         authUsers.add(user);
     }
 
-    public static AuthData getUsername(String authToken) {
+    public static AuthData getByToken(String authToken) throws DataAccessException {
         for (AuthData user : authUsers) {
             if(Objects.equals(user.authToken(), authToken)) {
                 return user;
             }
         }
-        return null;
+        throw new DataAccessException("user not found");
+    }
+
+    public static AuthData getByUsername(String username) throws DataAccessException {
+        for (AuthData user : authUsers) {
+            if(Objects.equals(user.username(), username)) {
+                return user;
+            }
+        }
+        throw new DataAccessException("user not found");
     }
 
     public static void deleteAuthUser(AuthData oldUser) {
-        for (AuthData user : authUsers) {
-            if(Objects.equals(user.authToken(), oldUser.authToken())) {
-                authUsers.remove(user);
-            }
-        }
+        authUsers.remove(oldUser);
     }
 
     public void updateAuthUser(AuthData user){
-        AuthData oldUser = getUsername(user.authToken());
-        deleteAuthUser(oldUser);
-        createAuthUser(user);
+//        AuthData oldUser = getByUsername(user.username());
+//        deleteAuthUser(oldUser);
+//        createAuthUser(user);
     }
 }
