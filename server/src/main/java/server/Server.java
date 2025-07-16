@@ -62,12 +62,12 @@ public class Server {
     }
 
     private Object logout (Request req, Response res) throws DataAccessException {
-        String authToken = req.headers("authToken");
+        String authToken = req.headers("Authorization");
         LogoutRequest request = new LogoutRequest(authToken);
         try{
             LogoutResult result = UserService.logout(request);
             res.status(200);
-            return new Gson().toJson(res);
+            return new Gson().toJson(result);
         } catch (DataAccessException e) {
             LogoutResult result = new LogoutResult("Error: unauthorized");
             res.status(401);
