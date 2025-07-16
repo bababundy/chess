@@ -109,9 +109,9 @@ class UserServiceTest {
 
     @Test
     void validLogout() throws DataAccessException {
-        LoginRequest request = new LoginRequest("kolt", "password");
-        LoginResult loginResult = UserService.login(request);
-        LogoutResult result = UserService.logout(new LogoutRequest(loginResult.authToken()));
+        authdao.createAuthUser(new AuthData("a17f1235-56d3-4cb9-81c8-9237bc5ab3ec", "kolt"));
+        LogoutRequest request = new LogoutRequest("a17f1235-56d3-4cb9-81c8-9237bc5ab3ec");
+        LogoutResult result = UserService.logout(request);
 
         assertNull(result.message());
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
