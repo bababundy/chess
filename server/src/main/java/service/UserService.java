@@ -1,15 +1,10 @@
 package service;
 
 import dataaccess.DataAccessException;
-import dataaccess.localStorage.UserDatabase;
 import model.AuthData;
 import model.UserData;
-import requests.LoginRequest;
-import requests.LogoutRequest;
-import requests.RegisterRequest;
-import results.LoginResult;
-import results.LogoutResult;
-import results.RegisterResult;
+import requests.*;
+import results.*;
 import dataaccess.*;
 
 import java.util.Objects;
@@ -44,10 +39,10 @@ public class UserService {
         //3. create new user model object insert new user into database
         userDAO.createUser(new UserData(username, password, email));
 
-        //5. login the new user (create new AuthToken model object, insert into database)
+        //4. login the new user (create new AuthToken model object, insert into database)
         var result = login(new LoginRequest(username, password));
 
-        //6. create registerresult and return
+        //5. create registerResult and return
         return new RegisterResult(result.username(), result.authToken(), null);
     }
 
@@ -79,15 +74,16 @@ public class UserService {
         if (authToken == null) {
             throw new DataAccessException("Missing authToken");
         }
+
         //2. validate authToken
         String username;
         try{username = authDAO.getUsername(authToken);}
         catch (DataAccessException e) {
             throw new DataAccessException("Invalid AuthToken");
         }
+
         //3. logout the new user (remove authToken model from database)
         authDAO.deleteAuthUser(new AuthData(authToken, username));
-
 
         //4. create result and return
         return new LogoutResult(null);
