@@ -16,19 +16,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class UserServiceTest {
 
-    private UserDao userdao;
-    private AuthDao authdao;
+    private final UserDao userdao = new UserDao();
+    private final AuthDao authdao = new AuthDao();
 
     @BeforeEach
     void setup() throws DataAccessException {
-        userdao = new UserDao();
-        authdao = new AuthDao();
         UserData user = new UserData("kolt", "password", "kolt@example.com");
         userdao.createUser(user);
     }
 
     @Test
-    void nullRegister() throws DataAccessException {
+    void nullRegister() {
         RegisterRequest request = new RegisterRequest(null, null, null);
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
             UserService.register(request);
@@ -37,7 +35,7 @@ class UserServiceTest {
     }
 
     @Test
-    void usernameAlreadyTaken() throws DataAccessException {
+    void usernameAlreadyTaken(){
         RegisterRequest request = new RegisterRequest("kolt", "password2", "kolt@example.com");
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
             UserService.register(request);
@@ -55,11 +53,11 @@ class UserServiceTest {
         assertNotNull(result.authToken());
         assertFalse(result.authToken().isBlank());
 
-        assertNotNull(AuthDao.getAuthUser(result.username()));
+        assertNotNull(AuthDao.getByUsername(result.username()));
     }
 
     @Test
-    void nullLogin() throws DataAccessException {
+    void nullLogin() {
         LoginRequest request = new LoginRequest(null, null);
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
             UserService.login(request);
@@ -68,7 +66,7 @@ class UserServiceTest {
     }
 
     @Test
-    void invalidLogin() throws DataAccessException {
+    void invalidLogin()  {
         LoginRequest request = new LoginRequest("kolt", "wrongpassword");
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
             UserService.login(request);
@@ -86,12 +84,12 @@ class UserServiceTest {
         assertNotNull(result.authToken());
         assertFalse(result.authToken().isBlank());
 
-        assertNotNull(AuthDao.getAuthUser(result.username()));
+        assertNotNull(AuthDao.getByUsername(result.username()));
     }
 
     @Test
-    void invalidLogout() throws DataAccessException {
-        LogoutRequest request = new LogoutRequest("abcd1234");
+    void invalidLogout() {
+        LogoutRequest request = new LogoutRequest("abcd124");
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
             UserService.logout(request);
         });
@@ -99,7 +97,7 @@ class UserServiceTest {
     }
 
     @Test
-    void nullLogout() throws DataAccessException {
+    void nullLogout()  {
         LogoutRequest request = new LogoutRequest(null);
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
             UserService.logout(request);
@@ -109,14 +107,15 @@ class UserServiceTest {
 
     @Test
     void validLogout() throws DataAccessException {
-        authdao.createAuthUser(new AuthData("a17f1235-56d3-4cb9-81c8-9237bc5ab3ec", "kolt"));
-        LogoutRequest request = new LogoutRequest("a17f1235-56d3-4cb9-81c8-9237bc5ab3ec");
+        String authToken = "a17f1235-56d3-4cb9-81c8-9237bc5ab3ec";
+        AuthDao.createAuthUser(new AuthData(authToken, "kolt"));
+        LogoutRequest request = new LogoutRequest(authToken);
         LogoutResult result = UserService.logout(request);
 
         assertNull(result.message());
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
-            AuthDao.getAuthUser("kolt");
+            AuthDao.getByToken(authToken);
         });
-        assertTrue(ex.getMessage().contains("not found"));
+        assertTrue(ex.getMessage().contains("Invalid"));
     }
 }
