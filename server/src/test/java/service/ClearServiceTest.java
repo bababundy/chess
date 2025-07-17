@@ -6,6 +6,7 @@ import model.AuthData;
 import model.GameData;
 import model.UserData;
 import org.junit.jupiter.api.Test;
+import service.ClearService;
 
 import java.util.Map;
 
@@ -19,7 +20,8 @@ class ClearServiceTest {
     void clear() {
         AUTHUSERS.put("abcd1234", new AuthData("abcd1234", "kolt"));
         GAMES.put(1, new GameData(1, "white", "black", "cool game", new ChessGame()));
-        USERS.put("kolt", new UserData("kolt", "password", "kolt@example.com"));ClearService.clear();
+        USERS.put("kolt", new UserData("kolt", "password", "kolt@example.com"));
+        ClearService.clear();
         ClearService.clear();
         assertTrue(AUTHUSERS.isEmpty(), "Auth tokens were not cleared");
         assertTrue(USERS.isEmpty(), "Users were not cleared");

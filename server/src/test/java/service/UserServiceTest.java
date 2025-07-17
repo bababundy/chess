@@ -11,6 +11,7 @@ import requests.*;
 import results.LoginResult;
 import results.LogoutResult;
 import results.RegisterResult;
+import service.UserService;
 
 import static org.junit.jupiter.api.Assertions.*;
 
