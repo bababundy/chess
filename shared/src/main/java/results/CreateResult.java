@@ -1,3 +1,3 @@
 package results;
 
-public record CreateResult (String gameID, String message) {}
+public record CreateResult (Integer gameID, String message) {}
