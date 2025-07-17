@@ -11,8 +11,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class UserService {
-    private static final UserDao userDAO = new UserDao();
-    private static final AuthDao authDAO = new AuthDao();
+    private static final UserDao USERDAO = new UserDao();
+    private static final AuthDao AUTHDAO = new AuthDao();
 
     public static RegisterResult register(RegisterRequest req) throws DataAccessException {
         String username = req.username();
@@ -37,7 +37,7 @@ public class UserService {
         }
 
         //3. create new user model object insert new user into database
-        userDAO.createUser(new UserData(username, password, email));
+        USERDAO.createUser(new UserData(username, password, email));
 
         //4. login the new user (create new AuthToken model object, insert into database)
         var result = login(new LoginRequest(username, password));
@@ -77,13 +77,14 @@ public class UserService {
 
         //2. validate authToken
 
-        try{authDAO.getByToken(authToken);}
+        try{
+            AUTHDAO.getByToken(authToken);}
         catch (DataAccessException e) {
             throw new DataAccessException("Invalid AuthToken");
         }
 
         //3. logout the new user (remove authToken model from database)
-        authDAO.deleteAuthUser(authToken);
+        AUTHDAO.deleteAuthUser(authToken);
 
         //4. create result and return
         return new LogoutResult(null);

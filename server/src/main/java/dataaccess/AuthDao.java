@@ -5,14 +5,14 @@ import model.AuthData;
 import java.util.Map;
 
 public class AuthDao {
-    public static final Map<String, AuthData> authUsers = MemoryDatabase.getInstance().authUsers;
+    public static final Map<String, AuthData> AUTHUSERS = MemoryDatabase.getInstance().authUsers;
 
     public static void createAuthUser(AuthData user) throws DataAccessException {
-        authUsers.put(user.authToken(), user);
+        AUTHUSERS.put(user.authToken(), user);
     }
 
     public static AuthData getByUsername(String username) throws DataAccessException {
-        for (AuthData user : authUsers.values()) {
+        for (AuthData user : AUTHUSERS.values()) {
             if (user.username().equals(username)) {
                 return user;
             }
@@ -21,7 +21,7 @@ public class AuthDao {
     }
 
     public static AuthData getByToken(String authToken) throws DataAccessException {
-        AuthData user = authUsers.get(authToken);
+        AuthData user = AUTHUSERS.get(authToken);
         if (user == null) {
             throw new DataAccessException("Invalid authToken");
         }
@@ -29,10 +29,10 @@ public class AuthDao {
     }
 
     public void deleteAuthUser(String authToken) {
-        authUsers.remove(authToken);
+        AUTHUSERS.remove(authToken);
     }
 
     public void clear() {
-        authUsers.clear();
+        AUTHUSERS.clear();
     }
 }

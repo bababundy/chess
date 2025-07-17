@@ -9,8 +9,6 @@ import results.*;
 import java.util.ArrayList;
 import java.util.Objects;
 
-import static dataaccess.AuthDao.authUsers;
-
 
 public class GameService {
     private static final GameDao gameDAO = new GameDao();
