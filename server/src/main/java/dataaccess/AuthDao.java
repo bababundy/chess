@@ -1,35 +1,38 @@
 package dataaccess;
 
-import dataaccess.localStorage.AuthDatabase;
 import model.AuthData;
 
+import java.util.Map;
+
 public class AuthDao {
-    private static AuthDatabase db = new AuthDatabase();
+    public static final Map<String, AuthData> authUsers = MemoryDatabase.getInstance().authUsers;
 
     public static void createAuthUser(AuthData user) throws DataAccessException {
-        db.createAuthUser(user);
+        authUsers.put(user.authToken(), user);
     }
 
-    public static AuthData getAuthUser(String username) throws DataAccessException {
-        AuthData user = db.getByUsername(username);
-        if(user == null) {
-            throw new DataAccessException("user not found");
-        } else{
-            return user;
+    public static AuthData getByUsername(String username) throws DataAccessException {
+        for (AuthData user : authUsers.values()) {
+            if (user.username().equals(username)) {
+                return user;
+            }
         }
+        throw new DataAccessException("user not found");
     }
 
-    public void updateAuthUser(AuthData user) throws DataAccessException {}
-
-    public String getUsername (String authToken) throws DataAccessException {
-        return db.getByToken(authToken).username();
+    public static AuthData getByToken(String authToken) throws DataAccessException {
+        AuthData user = authUsers.get(authToken);
+        if (user == null) {
+            throw new DataAccessException("Invalid authToken");
+        }
+        return user;
     }
 
-    public String getAuthToken (String username) throws DataAccessException {
-        return db.getByUsername(username).authToken();
+    public void deleteAuthUser(String authToken) {
+        authUsers.remove(authToken);
     }
 
-    public void deleteAuthUser(AuthData user) {
-        db.deleteAuthUser(user);
+    public void clear() {
+        authUsers.clear();
     }
 }
