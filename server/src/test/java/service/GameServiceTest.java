@@ -2,47 +2,47 @@ package service;
 
 import chess.ChessGame;
 import dataaccess.*;
-import org.junit.jupiter.api.BeforeAll;
-import requests.*;
-import results.*;
 import model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import service.GameService;
+import requests.*;
+import results.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class GameServiceTest {
 
-    private static UserDao userdao;
-    private static AuthDao authdao;
-    private static GameDao gamedao;
-
-    @BeforeAll
-    static void initiate() {
-        userdao = new UserDao();
-        authdao = new AuthDao();
-        gamedao = new GameDao();
-    }
+    private GameService gameService;
+    private AuthDAO authDAO;
+    private UserDAO userDAO;
+    private GameDAO gameDAO;
 
     @BeforeEach
     void setup() throws DataAccessException {
-        userdao.clear();
-        authdao.clear();
-        gamedao.clear();
-        UserData user = new UserData("kolt", "password", "kolt@example.com");
-        userdao.createUser(user);
-        AuthData authUser = new AuthData("abcd1234", "kolt");
-        authdao.createAuthUser(authUser);
-        GameData existingGame = new GameData(1, null, "jimmy", "existing game", new ChessGame());
-        gamedao.createGame(existingGame);
+        // Set up fresh DAOs
+        authDAO = new MemoryAuthDao();
+        userDAO = new MemoryUserDao();
+        gameDAO = new MemoryGameDao();
+
+        // Inject into DAOFacade
+        DAOFacade.authDAO = authDAO;
+        DAOFacade.userDAO = userDAO;
+        DAOFacade.gameDAO = gameDAO;
+
+        // Create GameService instance using DAOs
+        gameService = new GameService(gameDAO, authDAO);
+
+        // Set up test data
+        userDAO.createUser(new UserData("kolt", "password", "kolt@example.com"));
+        authDAO.createAuthUser(new AuthData("abcd1234", "kolt"));
+        gameDAO.createGame(new GameData(1, null, "jimmy", "existing game", new ChessGame()));
     }
 
     @Test
-    void badCreate() throws DataAccessException {
+    void badCreate() {
         CreateRequest request = new CreateRequest("wrongToken", "newgame");
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
-            CreateResult result = GameService.create(request);
+            gameService.create(request);
         });
         assertTrue(ex.getMessage().contains("Invalid"));
     }
@@ -50,34 +50,34 @@ class GameServiceTest {
     @Test
     void validCreate() throws DataAccessException {
         CreateRequest request = new CreateRequest("abcd1234", "newgame");
-        CreateResult result = GameService.create(request);
-        assertTrue(result.gameID()>0);
-        assertSame("newgame", (gamedao.getGameByName("newgame")).gameName());
+        CreateResult result = gameService.create(request);
+        assertTrue(result.gameID() > 0);
+        assertEquals("newgame", gameDAO.getGameByID(result.gameID()).gameName());
     }
 
     @Test
     void badTokenJoin() {
         JoinRequest request = new JoinRequest("wrongToken", "WHITE", 1);
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
-            JoinResult result = GameService.join(request);
+            gameService.join(request);
         });
         assertTrue(ex.getMessage().contains("AuthToken"));
     }
 
     @Test
     void badGameIDJoin() {
-        JoinRequest request = new JoinRequest("abcd1234", "WHITE", 2);
+        JoinRequest request = new JoinRequest("abcd1234", "WHITE", 2); // game 2 doesn't exist
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
-            JoinResult result = GameService.join(request);
+            gameService.join(request);
         });
         assertTrue(ex.getMessage().contains("Bad"));
     }
 
     @Test
     void alreadyTakenJoin() {
-        JoinRequest request = new JoinRequest("abcd1234", "BLACK", 1);
+        JoinRequest request = new JoinRequest("abcd1234", "BLACK", 1); // black already taken
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
-            JoinResult result = GameService.join(request);
+            gameService.join(request);
         });
         assertTrue(ex.getMessage().contains("Taken"));
     }
@@ -85,8 +85,8 @@ class GameServiceTest {
     @Test
     void validJoin() throws DataAccessException {
         JoinRequest request = new JoinRequest("abcd1234", "WHITE", 1);
-        JoinResult result = GameService.join(request);
-        assertEquals("kolt", (gamedao.getGameByID(1)).whiteUsername());
+        JoinResult result = gameService.join(request);
+        assertEquals("kolt", gameDAO.getGameByID(1).whiteUsername());
         assertNull(result.message());
     }
 
@@ -94,18 +94,17 @@ class GameServiceTest {
     void badList() {
         ListRequest request = new ListRequest("badToken");
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
-            ListResult result = GameService.list(request);});
+            gameService.list(request);
+        });
         assertTrue(ex.getMessage().contains("Invalid"));
     }
 
     @Test
     void validList() throws DataAccessException {
-        GameData existingGame = new GameData(2, "", "ted", "second game", new ChessGame());
-        gamedao.createGame(existingGame);
+        gameDAO.createGame(new GameData(2, "", "ted", "second game", new ChessGame()));
         ListRequest request = new ListRequest("abcd1234");
-        ListResult result = GameService.list(request);
-        assertEquals(gamedao.getList(), result.games());
+        ListResult result = gameService.list(request);
+        assertEquals(2, result.games().size());
         assertNull(result.message());
     }
-
 }

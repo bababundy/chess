@@ -1,30 +1,39 @@
 package service;
 
 import chess.ChessGame;
-import dataaccess.MemoryDatabase;
+import dataaccess.*;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import service.ClearService;
-
-import java.util.Map;
+import results.ClearResult;
 
 import static org.junit.jupiter.api.Assertions.*;
+
 class ClearServiceTest {
-    private static final Map<String, AuthData> AUTHUSERS = MemoryDatabase.getInstance().authUsers;
-    private static final Map<Integer, GameData> GAMES = MemoryDatabase.getInstance().games;
-    private static final Map<String, UserData> USERS = MemoryDatabase.getInstance().users;
+
+    private ClearService clearService;
+
+    @BeforeEach
+    void setUp() throws DataAccessException {
+        DAOFacade.authDAO = new MemoryAuthDao();
+        DAOFacade.userDAO = new MemoryUserDao();
+        DAOFacade.gameDAO = new MemoryGameDao();
+
+        DAOFacade.authDAO.createAuthUser(new AuthData("abcd1234", "kolt"));
+        DAOFacade.userDAO.createUser(new UserData("kolt", "password", "kolt@example.com"));
+        DAOFacade.gameDAO.createGame(new GameData(1, "white", "black", "cool game", new ChessGame()));
+
+        clearService = new ClearService(DAOFacade.userDAO, DAOFacade.gameDAO, DAOFacade.authDAO);
+    }
 
     @Test
-    void clear() {
-        AUTHUSERS.put("abcd1234", new AuthData("abcd1234", "kolt"));
-        GAMES.put(1, new GameData(1, "white", "black", "cool game", new ChessGame()));
-        USERS.put("kolt", new UserData("kolt", "password", "kolt@example.com"));
-        ClearService.clear();
-        ClearService.clear();
-        assertTrue(AUTHUSERS.isEmpty(), "Auth tokens were not cleared");
-        assertTrue(USERS.isEmpty(), "Users were not cleared");
-        assertTrue(GAMES.isEmpty(), "Games were not cleared");
+    void clear() throws Exception {
+        ClearResult result = clearService.clear();
+
+        assertThrows(DataAccessException.class, () -> DAOFacade.authDAO.getByToken("abcd1234"));
+        assertThrows(DataAccessException.class, () -> DAOFacade.userDAO.getUser("kolt"));
+        assertTrue(DAOFacade.gameDAO.getList().isEmpty());
     }
 }
