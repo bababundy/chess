@@ -3,6 +3,7 @@ package service;
 import dataaccess.DataAccessException;
 import model.AuthData;
 import model.UserData;
+import org.eclipse.jetty.server.Authentication;
 import requests.*;
 import results.*;
 import dataaccess.*;
@@ -11,10 +12,15 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class UserService {
-    private static final UserDao USERDAO = new UserDao();
-    private static final AuthDao AUTHDAO = new AuthDao();
+    private final UserDAO userDAO;
+    private final AuthDAO authDAO;
 
-    public static RegisterResult register(RegisterRequest req) throws DataAccessException {
+    public UserService(UserDAO userDAO, AuthDAO authDAO){
+        this.userDAO = userDAO;
+        this.authDAO = authDAO;
+    }
+
+    public RegisterResult register(RegisterRequest req) throws DataAccessException {
         String username = req.username();
         String password = req.password();
         String email = req.email();
@@ -26,7 +32,7 @@ public class UserService {
 
         //2. check if username is already taken
         try {
-            UserData user = UserDao.getUser(username);
+            UserData user = userDAO.getUser(username);
             throw new DataAccessException("Username already taken");
         } catch(DataAccessException e) {
             if(Objects.equals(e.getMessage(), "user not found")){
@@ -37,7 +43,7 @@ public class UserService {
         }
 
         //3. create new user model object insert new user into database
-        USERDAO.createUser(new UserData(username, password, email));
+        userDAO.createUser(new UserData(username, password, email));
 
         //4. login the new user (create new AuthToken model object, insert into database)
         var result = login(new LoginRequest(username, password));
@@ -46,7 +52,7 @@ public class UserService {
         return new RegisterResult(result.username(), result.authToken(), null);
     }
 
-    public static LoginResult login(LoginRequest req) throws DataAccessException {
+    public LoginResult login(LoginRequest req) throws DataAccessException {
         String username = req.username();
         //1. verify input
         if (username == null || req.password() == null) {
@@ -54,7 +60,7 @@ public class UserService {
         }
 
         //2. check if password is correct
-        UserData user = UserDao.getUser(username);
+        UserData user = userDAO.getUser(username);
         if (!user.password().equals(req.password())) {
             throw new DataAccessException("Invalid username or password");
         }
@@ -62,13 +68,13 @@ public class UserService {
         //3.login the new user (create new AuthData model object, insert into database)
         String userAuthToken = UUID.randomUUID().toString();
         AuthData userAuthData = new AuthData(userAuthToken, username);
-        AuthDao.createAuthUser(userAuthData);
+        authDAO.createAuthUser(userAuthData);
 
         //4. create result and return
         return new LoginResult(username, userAuthToken, null);
     }
 
-    public static LogoutResult logout(LogoutRequest req) throws DataAccessException {
+    public LogoutResult logout(LogoutRequest req) throws DataAccessException {
         //1. verify input
         String authToken = req.authToken();
         if (authToken == null) {
@@ -78,13 +84,13 @@ public class UserService {
         //2. validate authToken
 
         try{
-            AUTHDAO.getByToken(authToken);}
+            authDAO.getByToken(authToken);}
         catch (DataAccessException e) {
             throw new DataAccessException("Invalid AuthToken");
         }
 
         //3. logout the new user (remove authToken model from database)
-        AUTHDAO.deleteAuthUser(authToken);
+        authDAO.deleteAuth(authToken);
 
         //4. create result and return
         return new LogoutResult(null);

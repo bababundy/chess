@@ -11,10 +11,15 @@ import java.util.Objects;
 
 
 public class GameService {
-    private static final GameDao GAMEDAO = new GameDao();
-    private static final AuthDao AUTHDAO = new AuthDao();
+    private final GameDAO gameDAO;
+    private final AuthDAO authDAO;
 
-    public static CreateResult create(CreateRequest req) throws DataAccessException {
+    public GameService(GameDAO gameDAO, AuthDAO authDAO){
+        this.gameDAO = gameDAO;
+        this.authDAO = authDAO;
+    }
+
+    public CreateResult create(CreateRequest req) throws DataAccessException {
         //1. verify input
         String authToken = req.authToken();
         String gameName = req.gameName();
@@ -24,29 +29,29 @@ public class GameService {
 
         //2. validate authToken
         try{
-            AuthData user = AUTHDAO.getByToken(authToken);
+            AuthData user = authDAO.getByToken(authToken);
         } catch (DataAccessException e) {
             throw new DataAccessException("Invalid AuthToken");
         }
 
-        int gameID = GAMEDAO.getNumGames() + 1;
+        int gameID = gameDAO.getNumGames() + 1;
         //3. create new game model object
         GameData newGame = new GameData(gameID, null, null, gameName, new ChessGame());
 
         //4. insert new game into database UserDao.createGame(g)
-        GAMEDAO.createGame(newGame);
+        gameDAO.createGame(newGame);
 
         //5. create result and return gameID
         return new CreateResult(gameID, null);
     }
 
-    public static JoinResult join(JoinRequest req) throws DataAccessException {
+    public JoinResult join(JoinRequest req) throws DataAccessException {
         //1. verify input
         String authToken = req.authToken();
         String playerColor = req.playerColor();
         Integer gameID = req.gameID();
 
-        if (authToken == null || playerColor == null || gameID == null || gameID <= 0 || gameID > (GAMEDAO.getNumGames())) {
+        if (authToken == null || playerColor == null || gameID == null || gameID <= 0 || gameID > (gameDAO.getNumGames())) {
             throw new DataAccessException("Bad request");
         }
         if(!playerColor.equals("BLACK") && !playerColor.equals("WHITE")){
@@ -56,35 +61,33 @@ public class GameService {
         //2 validate authToken
         AuthData user;
         try{
-            user = AUTHDAO.getByToken(authToken);
+            user = authDAO.getByToken(authToken);
         } catch (DataAccessException e) {
             throw new DataAccessException("invalid AuthToken");
         }
 
         //3. check if username is already taken in game
         //4. update game in database GameDao.updateGame(u)
-        GameData game = GAMEDAO.getGameByID(gameID);
+        GameData game = gameDAO.getGameByID(gameID);
         if(playerColor.equals("WHITE")){
             if(Objects.equals(game.whiteUsername(), null) || Objects.equals(game.whiteUsername(), user.username())){
-                GAMEDAO.updateGame(gameID, new GameData(gameID, user.username(), game.blackUsername(), game.gameName(), game.game()));
-            } else {
-                throw new DataAccessException("already Taken");
-            }
-        } else if (playerColor.equals("BLACK")) {
-            if(Objects.equals(game.blackUsername(), null) || Objects.equals(game.blackUsername(), user.username())){
-                GAMEDAO.updateGame(gameID, new GameData(gameID, game.whiteUsername(), user.username(), game.gameName(), game.game()));
+                gameDAO.updateGame(gameID, new GameData(gameID, user.username(), game.blackUsername(), game.gameName(), game.game()));
             } else {
                 throw new DataAccessException("already Taken");
             }
         } else {
-            throw new DataAccessException("playerColor not valid");
+            if(Objects.equals(game.blackUsername(), null) || Objects.equals(game.blackUsername(), user.username())){
+                gameDAO.updateGame(gameID, new GameData(gameID, game.whiteUsername(), user.username(), game.gameName(), game.game()));
+            } else {
+                throw new DataAccessException("already Taken");
+            }
         }
 
         //5. create result and return
         return new JoinResult(null);
     }
 
-    public static ListResult list(ListRequest req) throws DataAccessException {
+    public ListResult list(ListRequest req) throws DataAccessException {
         //1. verify input
         String authToken = req.authToken();
         if (authToken == null) {
@@ -93,13 +96,13 @@ public class GameService {
         //2 validate authToken
         AuthData user;
         try{
-            user = AUTHDAO.getByToken(authToken);
+            user = authDAO.getByToken(authToken);
         } catch (DataAccessException e) {
             throw new DataAccessException("Invalid AuthToken");
         }
 
         //3. create new arraylist and GameDao.getList()
-        ArrayList<GameData> games = GAMEDAO.getList();
+        ArrayList<GameData> games = gameDAO.getList();
 
         //4. create result and return
         return new ListResult(games, null);

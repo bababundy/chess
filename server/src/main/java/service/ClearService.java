@@ -4,15 +4,21 @@ import dataaccess.*;
 import results.ClearResult;
 
 public class ClearService {
-    private static final UserDao USERDAO = new UserDao();
-    private static final AuthDao AUTHDAO = new AuthDao();
-    private static final GameDao GAMEDAO = new GameDao();
+    private final UserDAO userDAO;
+    private final GameDAO gameDAO;
+    private final AuthDAO authDAO;
 
-    public static ClearResult clear() {
+    public ClearService(UserDAO userDAO, GameDAO gameDAO, AuthDAO authDAO){
+        this.userDAO = userDAO;
+        this.gameDAO = gameDAO;
+        this.authDAO = authDAO;
+    }
+
+    public ClearResult clear() throws DataAccessException {
         //1. database operations (clear users, clear games, clear authtokens)
-        AUTHDAO.clear();
-        GAMEDAO.clear();
-        USERDAO.clear();
+        authDAO.clear();
+        gameDAO.clear();
+        userDAO.clear();
         //3. create result and return
         return new ClearResult(null);
     }
