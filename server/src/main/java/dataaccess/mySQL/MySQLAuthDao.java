@@ -16,6 +16,11 @@ public class MySQLAuthDao implements AuthDAO {
     }
 
     @Override
+    public AuthData getByUsername(String username) throws DataAccessException {
+        return null;
+    }
+
+    @Override
     public void deleteAuth(String authToken) throws DataAccessException {
 
     }
