@@ -1,7 +1,9 @@
 package server;
 
 import com.google.gson.Gson;
+import dataaccess.DAOFacade;
 import dataaccess.DataAccessException;
+import dataaccess.MemoryAuthDao;
 import requests.RegisterRequest;
 import service.UserService;
 import service.GameService;
@@ -11,6 +13,15 @@ import results.*;
 import spark.*;
 
 public class Server {
+    private final UserService userService;
+    private final GameService gameService;
+    private final ClearService clearService;
+
+    public Server() {
+        this.userService = new UserService(DAOFacade.userDAO, DAOFacade.authDAO);
+        this.gameService = new GameService(DAOFacade.gameDAO, DAOFacade.authDAO);
+        this.clearService = new ClearService(DAOFacade.userDAO, DAOFacade.gameDAO, DAOFacade.authDAO);
+    }
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
@@ -34,7 +45,7 @@ public class Server {
         Spark.delete("/db", this::clear);
 
         Spark.awaitInitialization();
-        return Spark.port();
+        return desiredPort;
     }
 
     public void stop() {
@@ -48,7 +59,7 @@ public class Server {
         RegisterRequest request = new Gson().fromJson(req.body(), RegisterRequest.class);
         RegisterResult result;
         try{
-            result = UserService.register(request);
+            result = userService.register(request);
             res.status(200);
         } catch (DataAccessException e) {
             if(e.getMessage().contains("Missing")) {
@@ -67,7 +78,7 @@ public class Server {
         LoginRequest request = new Gson().fromJson(req.body(), LoginRequest.class);
         LoginResult result;
         try{
-            result = UserService.login(request);
+            result = userService.login(request);
             res.status(200);
         } catch (DataAccessException e) {
             if(e.getMessage().contains("Missing")) {
@@ -86,7 +97,7 @@ public class Server {
         String authToken = req.headers("Authorization");
         LogoutRequest request = new LogoutRequest(authToken);
         try{
-            LogoutResult result = UserService.logout(request);
+            LogoutResult result = userService.logout(request);
             res.status(200);
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
@@ -101,7 +112,7 @@ public class Server {
         ListRequest request = new ListRequest(authToken);
         ListResult result;
         try{
-            result = GameService.list(request);
+            result = gameService.list(request);
             res.status(200);
         } catch (DataAccessException e) {
             result = new ListResult(null,"Error: unauthorized");
@@ -117,7 +128,7 @@ public class Server {
 
         CreateResult result;
         try{
-            result = GameService.create(request);
+            result = gameService.create(request);
             res.status(200);
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
@@ -139,7 +150,7 @@ public class Server {
         JoinRequest request = new JoinRequest(authToken, helper.playerColor(), helper.gameID());
         JoinResult result;
         try{
-            result = GameService.join(request);
+            result = gameService.join(request);
             res.status(200);
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
@@ -162,7 +173,7 @@ public class Server {
     }
 
     private Object clear (Request req, Response res) throws DataAccessException {
-        ClearResult result = ClearService.clear();
+        ClearResult result = clearService.clear();
         res.status(200);
         return new Gson().toJson(result);
     }
