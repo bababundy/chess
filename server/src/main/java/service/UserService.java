@@ -3,6 +3,7 @@ package service;
 import dataaccess.DataAccessException;
 import dataaccess.daoInterfaces.AuthDAO;
 import dataaccess.daoInterfaces.UserDAO;
+import org.mindrot.jbcrypt.BCrypt;
 import model.AuthData;
 import model.UserData;
 import requests.*;
@@ -42,8 +43,11 @@ public class UserService {
             }
         }
 
+        //2.5 encrypt the password
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+
         //3. create new user model object insert new user into database
-        userDAO.createUser(new UserData(username, password, email));
+        userDAO.createUser(new UserData(username, hashedPassword, email));
 
         //4. login the new user (create new AuthToken model object, insert into database)
         var result = login(new LoginRequest(username, password));
@@ -61,7 +65,8 @@ public class UserService {
 
         //2. check if password is correct
         UserData user = userDAO.getUser(username);
-        if (!user.password().equals(req.password())) {
+        var hashedPassword = userDAO.getUser(username).password();
+        if (!BCrypt.checkpw(req.password(), hashedPassword)) {
             throw new DataAccessException("Invalid username or password");
         }
 
