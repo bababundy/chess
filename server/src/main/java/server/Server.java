@@ -1,9 +1,8 @@
 package server;
 
 import com.google.gson.Gson;
-import dataaccess.DAOFacade;
-import dataaccess.DataAccessException;
-import dataaccess.MemoryAuthDao;
+import dataaccess.*;
+import dataaccess.memory.*;
 import requests.RegisterRequest;
 import service.UserService;
 import service.GameService;
@@ -13,19 +12,36 @@ import results.*;
 import spark.*;
 
 public class Server {
-    private final UserService userService;
-    private final GameService gameService;
-    private final ClearService clearService;
+    private UserService userService;
+    private GameService gameService;
+    private ClearService clearService;
+
 
     public Server() {
-        this.userService = new UserService(DAOFacade.userDAO, DAOFacade.authDAO);
-        this.gameService = new GameService(DAOFacade.gameDAO, DAOFacade.authDAO);
-        this.clearService = new ClearService(DAOFacade.userDAO, DAOFacade.gameDAO, DAOFacade.authDAO);
+
     }
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
-        Spark.staticFiles.location("web");
+        Spark.staticFiles.location("/web");
+
+        if (DAOFacade.userDAO == null) {
+            DAOFacade.userDAO = new MemoryUserDao();
+        }
+        if (DAOFacade.authDAO == null) {
+            DAOFacade.authDAO = new MemoryAuthDao();
+        }
+        if (DAOFacade.gameDAO == null) {
+            DAOFacade.gameDAO = new MemoryGameDao();
+        }
+//        if (args.length >= 2 && args[1].equals("sql")) {
+//            DAOFacade.userDAO = new MySQLUserDao();
+//            DAOFacade.authDAO = new MySQLAuthDao();
+//            DAOFacade.gameDAO = new MySQLGameDao();
+//        }
+        userService = new UserService(DAOFacade.userDAO, DAOFacade.authDAO);
+        gameService = new GameService(DAOFacade.gameDAO, DAOFacade.authDAO);
+        clearService = new ClearService(DAOFacade.userDAO, DAOFacade.gameDAO, DAOFacade.authDAO);
 
         //account for all other (500) errors here
         Spark.exception(Exception.class, (exception, req, res) -> {
@@ -45,7 +61,7 @@ public class Server {
         Spark.delete("/db", this::clear);
 
         Spark.awaitInitialization();
-        return desiredPort;
+        return Spark.port();
     }
 
     public void stop() {

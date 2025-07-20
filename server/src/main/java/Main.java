@@ -1,7 +1,9 @@
 import dataaccess.*;
+import dataaccess.memory.MemoryAuthDao;
+import dataaccess.memory.MemoryGameDao;
+import dataaccess.memory.MemoryUserDao;
 import dataaccess.mySQL.*;
 import server.Server;
-import service.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -11,16 +13,7 @@ public class Main {
                 port = Integer.parseInt(args[0]);
             }
 
-            DAOFacade.userDAO = new MemoryUserDao();
-            DAOFacade.authDAO = new MemoryAuthDao(); // or new SQLAuthDAO();
-            DAOFacade.gameDAO = new MemoryGameDao();
-            if (args.length >= 2 && args[1].equals("sql")) {
-                DAOFacade.userDAO = new MySQLUserDao();
-                DAOFacade.authDAO = new MySQLAuthDao();
-                DAOFacade.gameDAO = new MySQLGameDao();
-            }
-
-            port = new Server().run(port);
+            new Server().run(port);
             System.out.printf("Server started on port %d", port);
             return;
         } catch (Throwable ex) {

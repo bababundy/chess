@@ -2,6 +2,9 @@ package service;
 
 import chess.ChessGame;
 import dataaccess.*;
+import dataaccess.memory.MemoryAuthDao;
+import dataaccess.memory.MemoryGameDao;
+import dataaccess.memory.MemoryUserDao;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
