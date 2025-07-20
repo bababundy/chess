@@ -1,9 +1,9 @@
-package dataaccess;
+package dataaccess.daoInterfaces;
 
+import dataaccess.DataAccessException;
 import model.GameData;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 public interface GameDAO { //compare to dataaccess in petshop
     void createGame(GameData newGame) throws DataAccessException;
