@@ -36,9 +36,7 @@ public class UserService {
             UserData user = userDAO.getUser(username);
             throw new DataAccessException("Username already taken");
         } catch(DataAccessException e) {
-            if(Objects.equals(e.getMessage(), "user not found")){
-                //username available
-            } else{
+            if(!Objects.equals(e.getMessage(), "user not found")){
                 throw new DataAccessException("Username already taken");
             }
         }
@@ -65,7 +63,7 @@ public class UserService {
 
         //2. check if password is correct
         UserData user = userDAO.getUser(username);
-        var hashedPassword = userDAO.getUser(username).password();
+        var hashedPassword = user.password();
         if (!BCrypt.checkpw(req.password(), hashedPassword)) {
             throw new DataAccessException("Invalid username or password");
         }

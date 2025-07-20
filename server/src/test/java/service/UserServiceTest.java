@@ -9,6 +9,7 @@ import model.AuthData;
 import model.UserData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mindrot.jbcrypt.BCrypt;
 import requests.*;
 import results.*;
 
@@ -25,9 +26,8 @@ class UserServiceTest {
         userDAO = new MemoryUserDao();
         authDAO = new MemoryAuthDao();
         userService = new UserService(userDAO, authDAO);
-
-        UserData user = new UserData("kolt", "password", "kolt@example.com");
-        userDAO.createUser(user);
+        String hashed = BCrypt.hashpw("password", BCrypt.gensalt());
+        userDAO.createUser(new UserData("kolt", hashed, "kolt@example.com"));
     }
 
     @Test
