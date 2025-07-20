@@ -3,10 +3,8 @@ package server;
 import com.google.gson.Gson;
 import dataaccess.*;
 import dataaccess.memory.*;
-import requests.RegisterRequest;
-import service.UserService;
-import service.GameService;
-import service.ClearService;
+import dataaccess.mySQL.*;
+import service.*;
 import requests.*;
 import results.*;
 import spark.*;
@@ -16,12 +14,7 @@ public class Server {
     private GameService gameService;
     private ClearService clearService;
 
-
-    public Server() {
-
-    }
-
-    public int run(int desiredPort) {
+    public int run(int desiredPort){
         Spark.port(desiredPort);
         Spark.staticFiles.location("/web");
 
@@ -34,11 +27,16 @@ public class Server {
         if (DAOFacade.gameDAO == null) {
             DAOFacade.gameDAO = new MemoryGameDao();
         }
-//        if (args.length >= 2 && args[1].equals("sql")) {
-//            DAOFacade.userDAO = new MySQLUserDao();
-//            DAOFacade.authDAO = new MySQLAuthDao();
-//            DAOFacade.gameDAO = new MySQLGameDao();
-//        }
+        if (true) { //put true if SQL and false if memory
+            DAOFacade.userDAO = new MySQLUserDao();
+            try {
+                DAOFacade.authDAO = new MySQLAuthDao();
+            } catch (DataAccessException e) {
+                throw new RuntimeException("setup failure");
+            }
+            DAOFacade.gameDAO = new MySQLGameDao();
+        }
+
         userService = new UserService(DAOFacade.userDAO, DAOFacade.authDAO);
         gameService = new GameService(DAOFacade.gameDAO, DAOFacade.authDAO);
         clearService = new ClearService(DAOFacade.userDAO, DAOFacade.gameDAO, DAOFacade.authDAO);
