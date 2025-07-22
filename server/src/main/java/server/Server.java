@@ -3,7 +3,7 @@ package server;
 import com.google.gson.Gson;
 import dataaccess.*;
 import dataaccess.memory.*;
-import dataaccess.mySQL.*;
+import dataaccess.mysql.*;
 import service.*;
 import requests.*;
 import results.*;
@@ -28,16 +28,16 @@ public class Server {
             DAOFacade.gameDAO = new MemoryGameDao();
         }
         if (true) { //put true if SQL and false if memory
-            DAOFacade.userDAO = new MySQLUserDao();
+            DAOFacade.userDAO = new MySqlUserDao();
             try {
-                DAOFacade.authDAO = new MySQLAuthDao();
+                DAOFacade.authDAO = new MySqlAuthDao();
             } catch (DataAccessException e) {
                 throw new RuntimeException("setup failure");
             }
-            DAOFacade.gameDAO = new MySQLGameDao();
+            DAOFacade.gameDAO = new MySqlGameDao();
 
             try {
-                new sqlDaoHelper().configureDatabase();
+                new SqlDaoHelper().configureDatabase();
             } catch (DataAccessException e) {
                 throw new RuntimeException("Failed to configure SQL database", e);
             }

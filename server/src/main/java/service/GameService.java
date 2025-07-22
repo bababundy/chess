@@ -2,8 +2,8 @@ package service;
 
 import chess.ChessGame;
 import dataaccess.*;
-import dataaccess.daoInterfaces.AuthDAO;
-import dataaccess.daoInterfaces.GameDAO;
+import dataaccess.daointerfaces.AuthDAO;
+import dataaccess.daointerfaces.GameDAO;
 import model.*;
 import requests.*;
 import results.*;

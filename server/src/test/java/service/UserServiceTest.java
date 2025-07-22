@@ -1,8 +1,8 @@
 package service;
 
 import dataaccess.*;
-import dataaccess.daoInterfaces.AuthDAO;
-import dataaccess.daoInterfaces.UserDAO;
+import dataaccess.daointerfaces.AuthDAO;
+import dataaccess.daointerfaces.UserDAO;
 import dataaccess.memory.MemoryAuthDao;
 import dataaccess.memory.MemoryUserDao;
 import model.AuthData;

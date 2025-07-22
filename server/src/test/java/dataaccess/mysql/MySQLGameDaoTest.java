@@ -1,8 +1,7 @@
-package dataaccess.mySQL;
+package dataaccess.mysql;
 
 import chess.ChessGame;
 import dataaccess.DataAccessException;
-import dataaccess.DatabaseManager;
 import model.GameData;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -14,12 +13,12 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MySQLGameDaoTest {
-    private MySQLGameDao dao;
+    private MySqlGameDao dao;
 
 
     @BeforeEach
     public void setup() throws DataAccessException {
-        dao = new MySQLGameDao();
+        dao = new MySqlGameDao();
         dao.clear();
     }
 
@@ -173,7 +172,7 @@ class MySQLGameDaoTest {
 
     @Test
     void testGetNumGamesFailsGracefully() {
-        MySQLGameDao brokenDao = new MySQLGameDao() {
+        MySqlGameDao brokenDao = new MySqlGameDao() {
             @Override
             public Integer getNumGames() {
                 throw new RuntimeException("Simulated DB failure");

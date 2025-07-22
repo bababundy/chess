@@ -1,4 +1,4 @@
-package dataaccess.mySQL;
+package dataaccess.mysql;
 
 import dataaccess.DataAccessException;
 import model.AuthData;
@@ -8,12 +8,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MySQLAuthDaoTest {
-    private MySQLAuthDao dao;
+    private MySqlAuthDao dao;
     private final AuthData testAuth = new AuthData("testToken123", "testUser");
 
     @BeforeEach
     public void setup() throws DataAccessException {
-        dao = new MySQLAuthDao();
+        dao = new MySqlAuthDao();
         dao.clear();
         dao.createAuthUser(testAuth);
     }

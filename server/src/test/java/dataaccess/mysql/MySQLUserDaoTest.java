@@ -1,4 +1,4 @@
-package dataaccess.mySQL;
+package dataaccess.mysql;
 
 import dataaccess.DataAccessException;
 import model.UserData;
@@ -8,11 +8,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MySQLUserDaoTest {
-    private MySQLUserDao userDao;
+    private MySqlUserDao userDao;
 
     @BeforeEach
     public void setup() throws DataAccessException {
-        userDao = new MySQLUserDao();
+        userDao = new MySqlUserDao();
         userDao.clear();
     }
 

@@ -1,7 +1,7 @@
 package dataaccess.memory;
 
 import dataaccess.DataAccessException;
-import dataaccess.daoInterfaces.GameDAO;
+import dataaccess.daointerfaces.GameDAO;
 import model.GameData;
 
 import java.util.ArrayList;

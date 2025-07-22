@@ -1,15 +1,15 @@
-package dataaccess.mySQL;
+package dataaccess.mysql;
 
-import dataaccess.daoInterfaces.AuthDAO;
+import dataaccess.daointerfaces.AuthDAO;
 import dataaccess.DataAccessException;
 import model.AuthData;
 
 import java.util.HashMap;
 import java.util.List;
 
-public class MySQLAuthDao extends sqlDaoHelper implements AuthDAO {
+public class MySqlAuthDao extends SqlDaoHelper implements AuthDAO {
     
-    public MySQLAuthDao() throws DataAccessException {
+    public MySqlAuthDao() throws DataAccessException {
     }
 
     @Override

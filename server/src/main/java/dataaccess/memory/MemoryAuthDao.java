@@ -1,6 +1,6 @@
 package dataaccess.memory;
 
-import dataaccess.daoInterfaces.AuthDAO;
+import dataaccess.daointerfaces.AuthDAO;
 import dataaccess.DataAccessException;
 import model.AuthData;
 
@@ -8,14 +8,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryAuthDao implements AuthDAO {
-    private final Map<String, AuthData> AUTHUSERS = new HashMap<>();
+    private final Map<String, AuthData> authUsers = new HashMap<>();
 
     public void createAuthUser(AuthData user) throws DataAccessException {
-        AUTHUSERS.put(user.authToken(), user);
+        authUsers.put(user.authToken(), user);
     }
 
     public AuthData getByUsername(String username) throws DataAccessException {
-        for (AuthData user : AUTHUSERS.values()) {
+        for (AuthData user : authUsers.values()) {
             if (user.username().equals(username)) {
                 return user;
             }
@@ -24,7 +24,7 @@ public class MemoryAuthDao implements AuthDAO {
     }
 
     public AuthData getByToken(String authToken) throws DataAccessException {
-        AuthData user = AUTHUSERS.get(authToken);
+        AuthData user = authUsers.get(authToken);
         if (user == null) {
             throw new DataAccessException("Invalid authToken");
         }
@@ -32,10 +32,10 @@ public class MemoryAuthDao implements AuthDAO {
     }
 
     public void deleteAuth(String authToken) throws DataAccessException {
-        AUTHUSERS.remove(authToken);
+        authUsers.remove(authToken);
     }
 
     public void clear() {
-        AUTHUSERS.clear();
+        authUsers.clear();
     }
 }

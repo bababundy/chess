@@ -1,13 +1,13 @@
-package dataaccess.mySQL;
+package dataaccess.mysql;
 
 import dataaccess.*;
-import dataaccess.daoInterfaces.UserDAO;
+import dataaccess.daointerfaces.UserDAO;
 import model.UserData;
 
 import java.util.HashMap;
 import java.util.List;
 
-public class MySQLUserDao extends sqlDaoHelper implements UserDAO {
+public class MySqlUserDao extends SqlDaoHelper implements UserDAO {
     @Override
     public void createUser(UserData newUser) throws DataAccessException {
         if(newUser.username() == null || newUser.password() == null || newUser.email() == null) {

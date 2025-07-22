@@ -1,4 +1,4 @@
-package dataaccess.mySQL;
+package dataaccess.mysql;
 
 import chess.ChessGame;
 import dataaccess.DataAccessException;
@@ -12,16 +12,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class sqlDaoHelper {
+public class SqlDaoHelper {
     protected void executeUpdate(String statement, Object... params) throws DataAccessException {
         try (var conn = DatabaseManager.getConnection()) {
             try (var ps = conn.prepareStatement(statement, RETURN_GENERATED_KEYS)) {
                 for (var i = 0; i < params.length; i++) {
                     var param = params[i];
-                    if (param instanceof String p) ps.setString(i + 1, p);
-                    else if (param instanceof Integer p) ps.setInt(i + 1, p);
-                    else if (param instanceof ChessGame p) ps.setString(i + 1, p.toString());
-                    else if (param == null) ps.setNull(i + 1, NULL);
+                    if (param instanceof String p) {
+                        ps.setString(i + 1, p);
+                    }else if (param instanceof Integer p) {
+                        ps.setInt(i + 1, p);
+                    } else if (param instanceof ChessGame p) {
+                        ps.setString(i + 1, p.toString());
+                    }else if (param == null) {
+                        ps.setNull(i + 1, NULL);
+                    }
                 }
                 ps.executeUpdate();
                 var rs = ps.getGeneratedKeys();

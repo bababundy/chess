@@ -2,9 +2,9 @@ package service;
 
 import chess.ChessGame;
 import dataaccess.*;
-import dataaccess.daoInterfaces.AuthDAO;
-import dataaccess.daoInterfaces.GameDAO;
-import dataaccess.daoInterfaces.UserDAO;
+import dataaccess.daointerfaces.AuthDAO;
+import dataaccess.daointerfaces.GameDAO;
+import dataaccess.daointerfaces.UserDAO;
 import dataaccess.memory.MemoryAuthDao;
 import dataaccess.memory.MemoryGameDao;
 import dataaccess.memory.MemoryUserDao;

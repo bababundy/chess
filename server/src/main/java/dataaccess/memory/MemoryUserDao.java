@@ -1,21 +1,21 @@
 package dataaccess.memory;
 
 import dataaccess.DataAccessException;
-import dataaccess.daoInterfaces.UserDAO;
+import dataaccess.daointerfaces.UserDAO;
 import model.UserData;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryUserDao implements UserDAO {
-    private final Map<String, UserData> USERS = new HashMap<>();
+    private final Map<String, UserData> users = new HashMap<>();
 
     public void createUser(UserData newUser) {
-        USERS.put(newUser.username(), newUser);
+        users.put(newUser.username(), newUser);
     }
 
     public UserData getUser(String username) throws DataAccessException {
-        UserData user = USERS.get(username);
+        UserData user = users.get(username);
         if (user == null) {
             throw new DataAccessException("user not found");
         }
@@ -23,6 +23,6 @@ public class MemoryUserDao implements UserDAO {
     }
 
     public void clear() {
-        USERS.clear();
+        users.clear();
     }
 }

@@ -1,7 +1,7 @@
 package service;
 
 import dataaccess.*;
-import dataaccess.daoInterfaces.*;
+import dataaccess.daointerfaces.*;
 import results.ClearResult;
 
 public class ClearService {

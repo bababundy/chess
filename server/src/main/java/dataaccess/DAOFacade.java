@@ -1,8 +1,8 @@
 package dataaccess;
 
-import dataaccess.daoInterfaces.AuthDAO;
-import dataaccess.daoInterfaces.GameDAO;
-import dataaccess.daoInterfaces.UserDAO;
+import dataaccess.daointerfaces.AuthDAO;
+import dataaccess.daointerfaces.GameDAO;
+import dataaccess.daointerfaces.UserDAO;
 
 public class DAOFacade {
     public static UserDAO userDAO;

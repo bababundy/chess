@@ -1,14 +1,14 @@
-package dataaccess.mySQL;
+package dataaccess.mysql;
 
 import chess.ChessGame;
 import com.google.gson.Gson;
 import dataaccess.DataAccessException;
-import dataaccess.daoInterfaces.GameDAO;
+import dataaccess.daointerfaces.GameDAO;
 import model.GameData;
 
 import java.util.*;
 
-public class MySQLGameDao extends sqlDaoHelper implements GameDAO {
+public class MySqlGameDao extends SqlDaoHelper implements GameDAO {
     @Override
     public void createGame(GameData newGame) throws DataAccessException {
         if(newGame.gameName() == null || newGame.game() == null || newGame.gameID() == null){
