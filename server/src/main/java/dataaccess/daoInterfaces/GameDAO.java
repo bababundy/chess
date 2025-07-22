@@ -11,6 +11,6 @@ public interface GameDAO { //compare to dataaccess in petshop
     GameData getGameByName(String gameName) throws DataAccessException;
     GameData getGameByID(Integer gameID) throws DataAccessException;
     Integer getNumGames ();
-    ArrayList<GameData> getList();
+    ArrayList<GameData> getList() throws DataAccessException;
     void clear() throws DataAccessException;
 }
