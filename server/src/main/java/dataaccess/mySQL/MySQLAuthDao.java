@@ -1,32 +1,72 @@
 package dataaccess.mySQL;
 
-import dataaccess.AuthDAO;
+import dataaccess.daoInterfaces.AuthDAO;
 import dataaccess.DataAccessException;
 import model.AuthData;
 
-public class MySQLAuthDao implements AuthDAO {
+import java.util.HashMap;
+import java.util.List;
+
+public class MySQLAuthDao extends sqlDaoHelper implements AuthDAO {
+    
+    public MySQLAuthDao() throws DataAccessException {
+    }
+
     @Override
     public void createAuthUser(AuthData auth) throws DataAccessException {
-
+        //ensure no duplicate keys
+        AuthData previousUser = null;
+        try{
+            previousUser = getByToken(auth.authToken());
+            throw new DataAccessException("already taken");
+        } catch (DataAccessException e){
+            if(previousUser != null){
+                throw new DataAccessException("already taken");
+            }
+        }
+        //upload to database
+        var statement = "INSERT INTO authUsers (username, authToken) VALUES (?, ?)";
+        executeUpdate(statement, auth.username(), auth.authToken());
     }
 
     @Override
     public AuthData getByToken(String authToken) throws DataAccessException {
-        return null;
+        var statement = "SELECT authToken, username FROM authUsers WHERE authToken = ?";
+        List<HashMap<String, Object>> rows = executeQuery(statement, authToken);
+        if (rows.isEmpty()) {
+            throw new DataAccessException("user not found");
+        }
+        HashMap<String, Object> row = rows.getFirst();
+        return new AuthData(
+            (String) row.get("authToken"),
+            (String) row.get("username")
+        );
     }
 
     @Override
     public AuthData getByUsername(String username) throws DataAccessException {
-        return null;
+        var statement = "SELECT authToken, username FROM authUsers WHERE username = ?";
+        List<HashMap<String, Object>> rows = executeQuery(statement, username);
+
+        if (rows.isEmpty()) {
+            throw new DataAccessException("user not found");
+        }
+        HashMap<String, Object> row = rows.getFirst();
+        return new AuthData(
+            (String) row.get("authToken"),
+            (String) row.get("username")
+        );
     }
 
     @Override
     public void deleteAuth(String authToken) throws DataAccessException {
-
+        var statement = "DELETE FROM authUsers WHERE authToken = ?";
+        executeUpdate(statement, authToken);
     }
 
     @Override
     public void clear() throws DataAccessException {
-
+        var statement = "TRUNCATE authUsers";
+        executeUpdate(statement);
     }
 }
