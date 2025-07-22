@@ -1,9 +1,7 @@
 package service;
 
 import dataaccess.*;
-import dataaccess.daoInterfaces.AuthDAO;
-import dataaccess.daoInterfaces.GameDAO;
-import dataaccess.daoInterfaces.UserDAO;
+import dataaccess.daoInterfaces.*;
 import results.ClearResult;
 
 public class ClearService {
