@@ -16,7 +16,7 @@ public class Server {
 
     public int run(int desiredPort){
         Spark.port(desiredPort);
-        Spark.staticFiles.location("/web");
+        Spark.staticFiles.location("web");
 
         if (DAOFacade.userDAO == null) {
             DAOFacade.userDAO = new MemoryUserDao();
@@ -35,6 +35,12 @@ public class Server {
                 throw new RuntimeException("setup failure");
             }
             DAOFacade.gameDAO = new MySQLGameDao();
+
+            try {
+                new sqlDaoHelper().configureDatabase();
+            } catch (DataAccessException e) {
+                throw new RuntimeException("Failed to configure SQL database", e);
+            }
         }
 
         userService = new UserService(DAOFacade.userDAO, DAOFacade.authDAO);
@@ -59,6 +65,7 @@ public class Server {
         Spark.delete("/db", this::clear);
 
         Spark.awaitInitialization();
+        System.out.println("Server started on port: " + Spark.port());
         return Spark.port();
     }
 
@@ -69,18 +76,21 @@ public class Server {
 
     //below are all the service handlers for the seven endpoints
 
-    private Object register (Request req, Response res) throws DataAccessException {
+    private Object register (Request req, Response res) {
         RegisterRequest request = new Gson().fromJson(req.body(), RegisterRequest.class);
         RegisterResult result;
         try{
             result = userService.register(request);
             res.status(200);
         } catch (DataAccessException e) {
-            if(e.getMessage().contains("Missing")) {
+            Throwable cause = e.getCause();
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+                res.status(500);
+                result = new RegisterResult(null, null,"Error: database failure");
+            } else if(e.getMessage().contains("Missing")) {
                 res.status(400);
                 result = new RegisterResult(null, null, "Error: bad request");
-            }
-            else {
+            } else {
                 result = new RegisterResult(null, null, "Error: already taken");
                 res.status(403);
             }
@@ -88,18 +98,21 @@ public class Server {
         return new Gson().toJson(result);
     }
 
-    private Object login (Request req, Response res) throws DataAccessException {
+    private Object login (Request req, Response res) {
         LoginRequest request = new Gson().fromJson(req.body(), LoginRequest.class);
         LoginResult result;
         try{
             result = userService.login(request);
             res.status(200);
         } catch (DataAccessException e) {
-            if(e.getMessage().contains("Missing")) {
+            Throwable cause = e.getCause();
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+                res.status(500);
+                result = new LoginResult(null, null, "Error: database failure");
+            } else if(e.getMessage().contains("Missing")) {
                 res.status(400);
                 result = new LoginResult(null, null, "Error: bad request");
-            }
-            else {
+            } else {
                 result = new LoginResult(null, null, "Error: unauthorized");
                 res.status(401);
             }
@@ -107,21 +120,28 @@ public class Server {
         return new Gson().toJson(result);
     }
 
-    private Object logout (Request req, Response res) throws DataAccessException {
+    private Object logout (Request req, Response res) {
         String authToken = req.headers("Authorization");
         LogoutRequest request = new LogoutRequest(authToken);
+        LogoutResult result;
         try{
-            LogoutResult result = userService.logout(request);
+            result = userService.logout(request);
             res.status(200);
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
-            LogoutResult result = new LogoutResult("Error: unauthorized");
-            res.status(401);
+            Throwable cause = e.getCause();
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+                res.status(500);
+                result = new LogoutResult("Error: database failure");
+            } else {
+                result = new LogoutResult("Error: unauthorized");
+                res.status(401);
+            }
             return new Gson().toJson(result);
         }
     }
 
-    private Object listGames (Request req, Response res) throws DataAccessException {
+    private Object listGames (Request req, Response res) {
         String authToken = req.headers("Authorization");
         ListRequest request = new ListRequest(authToken);
         ListResult result;
@@ -129,13 +149,19 @@ public class Server {
             result = gameService.list(request);
             res.status(200);
         } catch (DataAccessException e) {
-            result = new ListResult(null,"Error: unauthorized");
-            res.status(401);
+            Throwable cause = e.getCause();
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+                res.status(500);
+                result = new ListResult(null,"Error: database failure");
+            } else {
+                result = new ListResult(null, "Error: unauthorized");
+                res.status(401);
+            }
         }
         return new Gson().toJson(result);
     }
 
-    private Object createGame (Request req, Response res) throws DataAccessException {
+    private Object createGame (Request req, Response res) {
         String authToken = req.headers("Authorization");
         CreateReqHelper helper = new Gson().fromJson(req.body(), CreateReqHelper.class);
         CreateRequest request = new CreateRequest(authToken, helper.gameName());
@@ -146,11 +172,14 @@ public class Server {
             res.status(200);
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
-            if(e.getMessage().contains("Missing")) {
+            Throwable cause = e.getCause();
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+                res.status(500);
+                result = new CreateResult(null,"Error: database failure");
+            } else if(e.getMessage().contains("Missing")) {
                 res.status(400);
                 result = new CreateResult(null, "Error: bad request");
-            }
-            else {
+            } else {
                 result = new CreateResult(null, "Error: unauthorized");
                 res.status(401);
             }
@@ -158,7 +187,7 @@ public class Server {
         return new Gson().toJson(result);
     }
 
-    private Object joinGame (Request req, Response res) throws DataAccessException {
+    private Object joinGame (Request req, Response res) {
         String authToken = req.headers("Authorization");
         JoinReqHelper helper = new Gson().fromJson(req.body(), JoinReqHelper.class);
         JoinRequest request = new JoinRequest(authToken, helper.playerColor(), helper.gameID());
@@ -168,26 +197,35 @@ public class Server {
             res.status(200);
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
-            if(e.getMessage().contains("Bad")) {
+            Throwable cause = e.getCause();
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+                res.status(500);
+                result = new JoinResult("Error: database failure");
+            } else if (e.getMessage().contains("Bad")) {
                 res.status(400);
                 result = new JoinResult("Error: bad request");
-            }
-            else if(e.getMessage().contains("AuthToken")) {
-                result = new JoinResult("Error: unauthorized");
+            } else if (e.getMessage().contains("AuthToken")) {
                 res.status(401);
-            } else if(e.getMessage().contains("Taken")){
-                result = new JoinResult("Error: already taken");
+                result = new JoinResult("Error: unauthorized");
+            } else if (e.getMessage().contains("Taken")) {
                 res.status(403);
+                result = new JoinResult("Error: already taken");
             } else {
                 res.status(500);
-                result = new JoinResult(e.getMessage());
+                result = new JoinResult("Error: " + e.getMessage());
             }
         }
         return new Gson().toJson(result);
     }
 
-    private Object clear (Request req, Response res) throws DataAccessException {
-        ClearResult result = clearService.clear();
+    private Object clear (Request req, Response res) {
+        ClearResult result = null;
+        try {
+            result = clearService.clear();
+        } catch (DataAccessException e) {
+            res.status(500);
+            result = new ClearResult("Error: database failure");
+        }
         res.status(200);
         return new Gson().toJson(result);
     }
