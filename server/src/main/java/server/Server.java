@@ -84,7 +84,7 @@ public class Server {
             res.status(200);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
                 res.status(500);
                 result = new RegisterResult(null, null,"Error: database failure");
             } else if(e.getMessage().contains("Missing")) {
@@ -106,7 +106,7 @@ public class Server {
             res.status(200);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
                 res.status(500);
                 result = new LoginResult(null, null, "Error: database failure");
             } else if(e.getMessage().contains("Missing")) {
@@ -130,7 +130,7 @@ public class Server {
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
                 res.status(500);
                 result = new LogoutResult("Error: database failure");
             } else {
@@ -150,7 +150,7 @@ public class Server {
             res.status(200);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
                 res.status(500);
                 result = new ListResult(null,"Error: database failure");
             } else {
@@ -173,7 +173,7 @@ public class Server {
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
                 res.status(500);
                 result = new CreateResult(null,"Error: database failure");
             } else if(e.getMessage().contains("Missing")) {
@@ -198,7 +198,7 @@ public class Server {
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("communications link failure")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
                 res.status(500);
                 result = new JoinResult("Error: database failure");
             } else if (e.getMessage().contains("Bad")) {
