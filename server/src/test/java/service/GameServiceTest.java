@@ -76,7 +76,7 @@ class GameServiceTest {
         DataAccessException ex = assertThrows(DataAccessException.class, () -> {
             gameService.join(request);
         });
-        assertTrue(ex.getMessage().contains("Bad"));
+        assertTrue(ex.getMessage().contains("not found"));
     }
 
     @Test
