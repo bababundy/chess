@@ -47,14 +47,6 @@ public class Server {
         gameService = new GameService(DAOFacade.gameDAO, DAOFacade.authDAO);
         clearService = new ClearService(DAOFacade.userDAO, DAOFacade.gameDAO, DAOFacade.authDAO);
 
-        //account for all other (500) errors here
-        Spark.exception(Exception.class, (exception, req, res) -> {
-            res.status(500);
-            res.type("application/json");
-            String errorMessage = exception.getMessage() != null ? exception.getMessage() : "Internal server error";
-            res.body(new Gson().toJson(new ErrorResult("Error: " + errorMessage)));
-        });
-
         //setup endpoints
         Spark.post("/user", this::register);
         Spark.post("/session", this::login);
@@ -130,7 +122,7 @@ public class Server {
             return new Gson().toJson(result);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().contains("500")) {
                 res.status(500);
                 result = new LogoutResult("Error: database failure");
             } else {
@@ -150,7 +142,7 @@ public class Server {
             res.status(200);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().contains("500")) {
                 res.status(500);
                 result = new ListResult(null,"Error: database failure");
             } else {
@@ -170,10 +162,9 @@ public class Server {
         try{
             result = gameService.create(request);
             res.status(200);
-            return new Gson().toJson(result);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().contains("500")) {
                 res.status(500);
                 result = new CreateResult(null,"Error: database failure");
             } else if(e.getMessage().contains("Missing")) {
@@ -195,10 +186,9 @@ public class Server {
         try{
             result = gameService.join(request);
             res.status(200);
-            return new Gson().toJson(result);
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof java.sql.SQLException || e.getMessage().toLowerCase().contains("500")) {
+            if (cause instanceof java.sql.SQLException || e.getMessage().contains("500")) {
                 res.status(500);
                 result = new JoinResult("Error: database failure");
             } else if (e.getMessage().contains("Bad")) {
@@ -207,12 +197,9 @@ public class Server {
             } else if (e.getMessage().contains("AuthToken")) {
                 res.status(401);
                 result = new JoinResult("Error: unauthorized");
-            } else if (e.getMessage().contains("Taken")) {
+            } else {
                 res.status(403);
                 result = new JoinResult("Error: already taken");
-            } else {
-                res.status(500);
-                result = new JoinResult("Error: " + e.getMessage());
             }
         }
         return new Gson().toJson(result);
@@ -222,11 +209,11 @@ public class Server {
         ClearResult result = null;
         try {
             result = clearService.clear();
+            res.status(200);
         } catch (DataAccessException e) {
             res.status(500);
             result = new ClearResult("Error: database failure");
         }
-        res.status(200);
         return new Gson().toJson(result);
     }
 }

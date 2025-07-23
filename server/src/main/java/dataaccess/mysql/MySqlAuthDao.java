@@ -32,7 +32,14 @@ public class MySqlAuthDao extends SqlDaoHelper implements AuthDAO {
     @Override
     public AuthData getByToken(String authToken) throws DataAccessException {
         var statement = "SELECT authToken, username FROM authUsers WHERE authToken = ?";
-        List<HashMap<String, Object>> rows = executeQuery(statement, authToken);
+        List<HashMap<String, Object>> rows;
+
+        try {
+            rows = executeQuery(statement, authToken);
+        } catch (Exception e) {
+            throw new DataAccessException("500 Database failure in getUser", e);
+        }
+
         if (rows.isEmpty()) {
             throw new DataAccessException("user not found");
         }

@@ -33,10 +33,17 @@ public class GameService {
         try{
             AuthData user = authDAO.getByToken(authToken);
         } catch (DataAccessException e) {
-            throw new DataAccessException("Invalid AuthToken");
+            if(e.getMessage().contains("500")){
+                throw e;
+            } else {
+                throw new DataAccessException("Invalid AuthToken");
+            }
         }
 
-        int gameID = gameDAO.getNumGames() + 1;
+        int gameID  = 1;
+        if(gameDAO.getNumGames() != null){
+            gameID += gameDAO.getNumGames();
+        }
         //3. create new game model object
         GameData newGame = new GameData(gameID, null, null, gameName, new ChessGame());
 
@@ -53,7 +60,7 @@ public class GameService {
         String playerColor = req.playerColor();
         Integer gameID = req.gameID();
 
-        if (authToken == null || playerColor == null || gameID == null || gameID <= 0 || gameID > (gameDAO.getNumGames())) {
+        if (authToken == null || playerColor == null || gameID == null || gameID <= 0) {
             throw new DataAccessException("Bad request");
         }
         if(!playerColor.equals("BLACK") && !playerColor.equals("WHITE")){
@@ -65,7 +72,11 @@ public class GameService {
         try{
             user = authDAO.getByToken(authToken);
         } catch (DataAccessException e) {
-            throw new DataAccessException("invalid AuthToken");
+            if(e.getMessage().contains("500")){
+                throw e;
+            } else {
+                throw new DataAccessException("Invalid AuthToken");
+            }
         }
 
         //3. check if username is already taken in game
@@ -100,7 +111,11 @@ public class GameService {
         try{
             user = authDAO.getByToken(authToken);
         } catch (DataAccessException e) {
-            throw new DataAccessException("Invalid AuthToken");
+            if(e.getMessage().contains("500")){
+                throw e;
+            } else {
+                throw new DataAccessException("Invalid AuthToken");
+            }
         }
 
         //3. create new arraylist and GameDao.getList()

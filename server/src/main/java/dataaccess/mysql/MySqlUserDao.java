@@ -24,7 +24,12 @@ public class MySqlUserDao extends SqlDaoHelper implements UserDAO {
             throw new DataAccessException("bad request");
         }
         var statement = "SELECT username, hashedPassword, email FROM users WHERE username = ?";
-        List<HashMap<String, Object>> rows = executeQuery(statement, username);
+        List<HashMap<String, Object>> rows;
+        try {
+            rows = executeQuery(statement, username);
+        } catch (Exception e) {
+            throw new DataAccessException("500 Database failure in getUser", e);
+        }
 
         if (rows.isEmpty()) {
             throw new DataAccessException("user not found");

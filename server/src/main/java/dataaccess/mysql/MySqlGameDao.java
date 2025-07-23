@@ -6,6 +6,7 @@ import dataaccess.DataAccessException;
 import dataaccess.daointerfaces.GameDAO;
 import model.GameData;
 
+import javax.xml.crypto.Data;
 import java.util.*;
 
 public class MySqlGameDao extends SqlDaoHelper implements GameDAO {
@@ -20,7 +21,7 @@ public class MySqlGameDao extends SqlDaoHelper implements GameDAO {
             executeUpdate(statement, newGame.gameID(), newGame.whiteUsername(), newGame.blackUsername(), newGame.gameName(), gameJson);
         } catch (DataAccessException e) {
             if(e.getMessage().contains("500")){
-                throw new DataAccessException(e.getMessage());
+                throw e;
             } else {
                 throw new RuntimeException("Failed to create game", e);
             }
@@ -40,7 +41,13 @@ public class MySqlGameDao extends SqlDaoHelper implements GameDAO {
     @Override
     public GameData getGameByName(String gameName) throws DataAccessException {
         var statement = "SELECT * FROM games WHERE gameName = ?";
-        List<HashMap<String, Object>> rows = executeQuery(statement, gameName);
+        List<HashMap<String, Object>> rows;
+        try {
+            rows = executeQuery(statement, gameName);
+        } catch(DataAccessException e) {
+            throw e;
+        }
+
         if (rows.isEmpty()) {
             throw new DataAccessException("game not found");
         }
@@ -50,7 +57,12 @@ public class MySqlGameDao extends SqlDaoHelper implements GameDAO {
     @Override
     public GameData getGameByID(Integer gameID) throws DataAccessException {
         var statement = "SELECT * FROM games WHERE gameID = ?";
-        List<HashMap<String, Object>> rows = executeQuery(statement, gameID);
+        List<HashMap<String, Object>> rows;
+        try {
+            rows = executeQuery(statement, gameID);
+        } catch (DataAccessException e) {
+            throw e;
+        }
         if (rows.isEmpty()) {
             throw new DataAccessException("game not found");
         }
@@ -79,7 +91,7 @@ public class MySqlGameDao extends SqlDaoHelper implements GameDAO {
             }
         } catch (DataAccessException e) {
             if(e.getMessage().contains("500")){
-                throw new DataAccessException(e.getMessage());
+                throw e;
             }
         }
         return result;

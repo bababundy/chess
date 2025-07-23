@@ -36,8 +36,10 @@ public class UserService {
             UserData user = userDAO.getUser(username);
             throw new DataAccessException("Username already taken");
         } catch(DataAccessException e) {
-            if(!Objects.equals(e.getMessage(), "user not found")){
-                throw new DataAccessException("Username already taken");
+            if(Objects.equals(e.getMessage(), "user not found")){
+                //good and continue
+            } else{
+                throw e;
             }
         }
 
@@ -85,11 +87,14 @@ public class UserService {
         }
 
         //2. validate authToken
-
-        try{
-            authDAO.getByToken(authToken);}
-        catch (DataAccessException e) {
-            throw new DataAccessException("Invalid AuthToken");
+        try {
+            authDAO.getByToken(authToken);
+        } catch (DataAccessException e) {
+            if(e.getMessage().contains("500")){
+                throw e;
+            } else {
+                throw new DataAccessException("Invalid AuthToken");
+            }
         }
 
         //3. logout the new user (remove authToken model from database)
