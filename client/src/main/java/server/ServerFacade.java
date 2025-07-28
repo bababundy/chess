@@ -33,9 +33,9 @@ public class ServerFacade {
         return this.makeRequest("POST", path, req, LoginResult.class);
     }
 
-    public void logout(LogoutRequest req) throws ResponseException {
+    public LogoutResult logout(LogoutRequest req) throws ResponseException {
         var path = "/session";
-        this.makeRequest("DELETE", path, null, null);
+        return this.makeRequest("DELETE", path, req, LogoutResult.class);
     }
 
     public CreateResult createGame(CreateRequest req) throws ResponseException {
@@ -48,15 +48,15 @@ public class ServerFacade {
         return this.makeRequest("PUT", path, req, JoinResult.class);
     }
 
-    public ArrayList<GameData> listPets(ListRequest req) throws ResponseException {
+    public ArrayList<GameData> listGames(ListRequest req) throws ResponseException {
         var path = "/game";
         var response = this.makeRequest("GET", path, req, ListResult.class);
         return response.games();
     }
 
-    public void clear() throws ResponseException {
+    public ClearResult clear() throws ResponseException {
         var path = "/db";
-        this.makeRequest("DELETE", path, null, null);
+        return this.makeRequest("DELETE", path, null, ClearResult.class);
     }
 
     private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
@@ -64,7 +64,10 @@ public class ServerFacade {
             URL url = (new URI(serverUrl + path)).toURL();
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
             http.setRequestMethod(method);
-            http.setDoOutput(true);
+            if (!method.equals("GET") && request != null) {
+                http.setDoOutput(true);
+            }
+            //somehow add the authtoken!!!!!!
 
             writeBody(request, http);
             http.connect();
