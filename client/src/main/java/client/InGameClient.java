@@ -53,8 +53,9 @@ public class InGameClient extends ClientBase{
         var cmd = (tokens.length > 0) ? tokens[0] : "help";
         var params = Arrays.copyOfRange(tokens, 1, tokens.length);
         return switch (cmd) {
-            case "d1" -> drawBoard();
-            case "d2" -> drawOtherBoard();
+            case "draww" -> drawWhiteBoard();
+            case "drawb" -> drawBlackBoard();
+
             case "leave" -> leave();
             default -> help();
         };
