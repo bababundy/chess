@@ -51,10 +51,9 @@ public class PreLoginClient extends ClientBase{
         String password = params[1];
         String email = params[2];
         RegisterResult result;
-        try {
-            result = server.register(new RegisterRequest(username, password, email));
-        } catch (ResponseException e) {
-            throw new ResponseException(400, "Username already taken, try something else");
+        result = server.register(new RegisterRequest(username, password, email));
+        if(result.message() != null){
+            return result.message();
         }
 
         state = State.SIGNEDIN;
@@ -73,10 +72,9 @@ public class PreLoginClient extends ClientBase{
 
         //check if correct password and get new authtoken
         LoginResult result;
-        try {
-            result = server.login(new LoginRequest(username, password));
-        } catch (ResponseException e) {
-            throw new ResponseException(400, "Incorrect Password");
+        result = server.login(new LoginRequest(username, password));
+        if(result.message() != null){
+            return result.message();
         }
 
         state = State.SIGNEDIN;

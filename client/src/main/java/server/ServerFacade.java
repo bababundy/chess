@@ -1,13 +1,11 @@
 package server;
 
 import com.google.gson.Gson;
-import model.GameData;
 import requests.*;
 import results.*;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
 import java.util.Objects;
 
 public class ServerFacade {
@@ -20,12 +18,20 @@ public class ServerFacade {
 
     public RegisterResult register(RegisterRequest req) throws ResponseException {
         var path = "/user";
-        return this.makeRequest("POST", path, req, RegisterResult.class, null);
+        try {
+            return this.makeRequest("POST", path, req, RegisterResult.class, null);
+        } catch (ResponseException e) {
+            throw new ResponseException(400, "Username already taken, try something else");
+        }
     }
 
     public LoginResult login(LoginRequest req) throws ResponseException {
         var path = "/session";
-        return this.makeRequest("POST", path, req, LoginResult.class, null);
+        try{
+            return this.makeRequest("POST", path, req, LoginResult.class, null);
+        } catch (ResponseException e) {
+            throw new ResponseException(400, "Incorrect Password");
+        }
     }
 
     public LogoutResult logout(LogoutRequest req) throws ResponseException {
@@ -35,17 +41,32 @@ public class ServerFacade {
 
     public CreateResult createGame(CreateRequest req) throws ResponseException {
         var path = "/game";
-        return this.makeRequest("POST", path, new CreateReqHelper(req.gameName()), CreateResult.class, req.authToken());
+        if(req.gameName() == null) {
+            throw new ResponseException(400, "bad request");
+        }
+        try {
+            return this.makeRequest("POST", path, new CreateReqHelper(req.gameName()), CreateResult.class, req.authToken());
+        } catch (ResponseException e){
+            throw new ResponseException(400, "Bad request Probably");
+        }
     }
 
     public JoinResult joinGame(JoinRequest req) throws ResponseException {
         var path = "/game";
-        return this.makeRequest("PUT", path, new JoinReqHelper(req.playerColor(), req.gameID()), JoinResult.class, req.authToken());
+        try {
+            return this.makeRequest("PUT", path, new JoinReqHelper(req.playerColor(), req.gameID()), JoinResult.class, req.authToken());
+        } catch (ResponseException e) {
+            throw new ResponseException(400, "Bad request Probably");
+        }
     }
 
     public ListResult listGames(ListRequest req) throws ResponseException {
         var path = "/game";
-        return this.makeRequest("GET", path, null, ListResult.class, req.authToken());
+        try {
+            return this.makeRequest("GET", path, null, ListResult.class, req.authToken());
+        } catch (ResponseException e) {
+            throw new ResponseException(400, "Bad request Probably");
+        }
     }
 
     public ClearResult clear() throws ResponseException {

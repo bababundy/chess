@@ -75,6 +75,9 @@ public class PostLoginClient extends ClientBase{
         String playerColor = params[1].toUpperCase();
 
         JoinResult result = server.joinGame(new JoinRequest(authToken, playerColor, gameID));
+        if(result.message() != null){
+            return result.message();
+        }
 
         int dir = (playerColor == "WHITE") ? 1 : -1;
         state = State.INGAME;
