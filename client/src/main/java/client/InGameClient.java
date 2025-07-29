@@ -1,6 +1,7 @@
 package client;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import static ui.EscapeSequences.*;
 
@@ -13,7 +14,6 @@ public class InGameClient extends ClientBase{
     private String offBoardColor = RESET_BG_COLOR;
 
     private String authToken;
-    private int checkerColor = 0;
     private int dir; // 1 for white or observe and -1 for black
     private Repl repl;
 
@@ -80,6 +80,7 @@ public class InGameClient extends ClientBase{
         int init = (dir == 1) ? 7 : 0; // 7 is top row, 0 is bottom
         int end = (dir == 1) ? -1 : 8;
         int step = (dir == 1) ? -1 : 1;
+        int checkerRow = 1;
 
         String[][] board = {
                 {"♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"},
@@ -92,23 +93,36 @@ public class InGameClient extends ClientBase{
                 {"♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"},
         };
 
+
         printColHeaders(dir);
-        checkerColor = 1;
-        for (int row = init; row != end; row += step) {
+        for (int row = init; row != end; row += step, checkerRow++) {
             System.out.print(outerColor + letterColor + " " + (8 - row) + " ");  // left label
 
-            checkerColor = row % 2;
-            for (int col = 0; col < 8; col++) {
-                String squareColor = checkerColor();
-                String piece = board[row][col];
-                String pieceColor = "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_BLUE :
-                        "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_RED : letterColor;
-                if(piece == null || piece.equals(" ")) {
-                    System.out.print(squareColor + pieceColor + EMPTY);
-                } else {
-                    System.out.print(squareColor + pieceColor + " " + piece + " ");
+            String squareColor = (checkerRow % 2 == 0) ? lightColor : darkColor;
+            if(dir == 1) {
+                for (int col = 0; col < 8; col++) {
+                    squareColor = (Objects.equals(squareColor, darkColor)) ? lightColor : darkColor;
+                    String piece = board[row][col];
+                    String pieceColor = "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_BLUE :
+                            "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_RED : letterColor;
+                    if (piece == null || piece.equals(" ")) {
+                        System.out.print(squareColor + pieceColor + EMPTY);
+                    } else {
+                        System.out.print(squareColor + pieceColor + " " + piece + " ");
+                    }
                 }
-
+            } else {
+                for (int col = 7; col >= 0; col--) {
+                    squareColor = (Objects.equals(squareColor, darkColor)) ? lightColor : darkColor;
+                    String piece = board[row][col];
+                    String pieceColor = "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_BLUE :
+                            "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_RED : letterColor;
+                    if(piece == null || piece.equals(" ")) {
+                        System.out.print(squareColor + pieceColor + EMPTY);
+                    } else {
+                        System.out.print(squareColor + pieceColor + " " + piece + " ");
+                    }
+                }
             }
 
             System.out.println(outerColor + letterColor + " " + (8 - row) + " " + offBoardColor);
@@ -116,16 +130,6 @@ public class InGameClient extends ClientBase{
         printColHeaders(dir);
         System.out.print(RESET_TEXT_COLOR);
         return "move?";
-    }
-
-    private String checkerColor () {
-        if(checkerColor == 0){
-            checkerColor = 1;
-            return lightColor;
-        } else {
-            checkerColor = 0;
-            return darkColor;
-        }
     }
 
     private void printColHeaders(int dir) {
