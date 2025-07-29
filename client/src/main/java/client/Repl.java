@@ -7,14 +7,18 @@ import java.util.Scanner;
 import static ui.EscapeSequences.*;
 
 public class Repl {
-    private final ClientBase client;
+    private ClientBase client;
 
     public Repl(String serverUrl) {
         client = new PreLoginClient(serverUrl, this);
     }
 
+    public void setClient(ClientBase newClient) {
+        this.client = newClient;
+    }
+
     public void run() {
-        System.out.println(SET_TEXT_COLOR_BLUE + "Welcome to the chess client. Sign in or register to start.");
+        System.out.println(SET_TEXT_COLOR_BLUE + "Welcome to the chess client. Sign in or register to start." + RESET_TEXT_COLOR);
         System.out.print(client.help());
 
         Scanner scanner = new Scanner(System.in);
@@ -35,6 +39,6 @@ public class Repl {
     }
 
     private void printPrompt() {
-        System.out.print("\n" + UNICODE_ESCAPE + "[" + client.state + "]" + ">>> " + SET_BG_COLOR_DARK_GREEN);
+        System.out.print("\n" + "[" + client.state + "]" + ">>> ");
     }
 }
