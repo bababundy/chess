@@ -8,6 +8,7 @@ import results.*;
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class ServerFacade {
 
@@ -29,23 +30,22 @@ public class ServerFacade {
 
     public LogoutResult logout(LogoutRequest req) throws ResponseException {
         var path = "/session";
-        return this.makeRequest("DELETE", path, req, LogoutResult.class, req.authToken());
+        return this.makeRequest("DELETE", path, null, LogoutResult.class, req.authToken());
     }
 
     public CreateResult createGame(CreateRequest req) throws ResponseException {
         var path = "/game";
-        return this.makeRequest("POST", path, req, CreateResult.class, req.authToken());
+        return this.makeRequest("POST", path, new CreateReqHelper(req.gameName()), CreateResult.class, req.authToken());
     }
 
     public JoinResult joinGame(JoinRequest req) throws ResponseException {
         var path = "/game";
-        return this.makeRequest("PUT", path, req, JoinResult.class, req.authToken());
+        return this.makeRequest("PUT", path, new JoinReqHelper(req.playerColor(), req.gameID()), JoinResult.class, req.authToken());
     }
 
-    public ArrayList<GameData> listGames(ListRequest req) throws ResponseException {
+    public ListResult listGames(ListRequest req) throws ResponseException {
         var path = "/game";
-        var response = this.makeRequest("GET", path, req, ListResult.class, req.authToken());
-        return response.games();
+        return this.makeRequest("GET", path, null, ListResult.class, req.authToken());
     }
 
     public ClearResult clear() throws ResponseException {
@@ -58,14 +58,15 @@ public class ServerFacade {
             URL url = (new URI(serverUrl + path)).toURL();
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
             http.setRequestMethod(method);
-            if (!method.equals("GET") && request != null) {
-                http.setDoOutput(true);
-            }
-            if (authToken != null) {
+            if (authToken != null && !Objects.equals(http.getRequestProperty("Authorization"), "Already connected")) {
                 http.setRequestProperty("Authorization", authToken);
             }
+            //http.setRequestProperty("Content-Type", "application/json");
+            if (!method.equals("GET") && request != null) {
+                http.setDoOutput(true);
+                writeBody(request, http);
+            }
 
-            writeBody(request, http);
             http.connect();
             throwIfNotSuccessful(http);
             return readBody(http, responseClass);
@@ -78,7 +79,6 @@ public class ServerFacade {
 
     private static void writeBody(Object request, HttpURLConnection http) throws IOException {
         if (request != null) {
-            http.addRequestProperty("Content-Type", "application/json");
             String reqData = new Gson().toJson(request);
             try (OutputStream reqBody = http.getOutputStream()) {
                 reqBody.write(reqData.getBytes());
@@ -100,12 +100,10 @@ public class ServerFacade {
 
     private static <T> T readBody(HttpURLConnection http, Class<T> responseClass) throws IOException {
         T response = null;
-        if (http.getContentLength() < 0) {
-            try (InputStream respBody = http.getInputStream()) {
-                InputStreamReader reader = new InputStreamReader(respBody);
-                if (responseClass != null) {
-                    response = new Gson().fromJson(reader, responseClass);
-                }
+        try (InputStream respBody = http.getInputStream()) {
+            InputStreamReader reader = new InputStreamReader(respBody);
+            if (responseClass != null) {
+                response = new Gson().fromJson(reader, responseClass);
             }
         }
         return response;
