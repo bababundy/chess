@@ -14,8 +14,8 @@ public class ServerFacade {
 
     private final String serverUrl;
 
-    public ServerFacade(String url) {
-        serverUrl = url;
+    public ServerFacade(int port) {
+        serverUrl = "http://localhost:" + port;;
     }
 
     public RegisterResult register(RegisterRequest req) throws ResponseException {

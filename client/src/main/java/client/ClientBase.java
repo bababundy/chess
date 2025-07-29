@@ -8,7 +8,7 @@ public class ClientBase {
     protected static State state = State.SIGNEDOUT;
 
     public ClientBase(String serverUrl) {
-        server = new ServerFacade(serverUrl);
+        server = new ServerFacade(8080);
         this.serverUrl = serverUrl;
     }
 
