@@ -7,15 +7,23 @@ import server.ResponseException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class PostLoginClient extends ClientBase{
     private String authToken;
     private Repl repl;
+    HashMap <Integer, Integer> gameMap = new HashMap<>(); //<fakeNum, gameID>
+
 
     public PostLoginClient(String serverUrl, Repl repl, String authToken) {
         super(serverUrl);
         this.repl = repl;
         this.authToken = authToken;
+        try {
+            updateGameMap();
+        } catch (ResponseException e) {
+            throw new RuntimeException("Server problems");
+        }
     }
 
     @Override
@@ -56,9 +64,8 @@ public class PostLoginClient extends ClientBase{
             throw new ResponseException(400, "Expected: <NAME>");
         }
         String gameName = params[0];
-
         CreateResult result = server.createGame(new CreateRequest(authToken, gameName));
-
+        updateGameMap();
         return "Created game " + result.gameID();
     }
 
@@ -71,8 +78,20 @@ public class PostLoginClient extends ClientBase{
         if(params.length != 2) {
             throw new ResponseException(400, "Expected: <ID> [WHITE|BLACK]");
         }
-        Integer gameID = Integer.parseInt(params[0]);
+        Integer gameID;
+        try {
+            Integer gameNum = Integer.parseInt(params[0]);
+            gameID = getGameIDfromMap(gameNum);
+        } catch (NumberFormatException e) {
+            throw new ResponseException(400, "Expected: <ID> [WHITE|BLACK]");
+        }
+        if(gameID == null){
+            throw new ResponseException(400, "Game # not available.");
+        }
         String playerColor = params[1].toUpperCase();
+        if(!playerColor.equals("WHITE") && !playerColor.equals("BLACK")) {
+            throw new ResponseException(400, "Expected: <ID> [WHITE|BLACK]");
+        }
 
         JoinResult result = server.joinGame(new JoinRequest(authToken, playerColor, gameID));
         if(result.message() != null){
@@ -89,7 +108,11 @@ public class PostLoginClient extends ClientBase{
         if(params.length != 1) {
             throw new ResponseException(400, "Expected: <ID>");
         }
-        int gameID = Integer.parseInt(params[0]);
+        Integer gameNum = Integer.parseInt(params[0]);
+        Integer gameID = getGameIDfromMap(gameNum);
+        if(gameID == null){
+            throw new ResponseException(400, "Game # not available.");
+        }
 
         state = State.INGAME;
         repl.setClient(new InGameClient(serverUrl, repl, authToken, 1));
@@ -110,8 +133,10 @@ public class PostLoginClient extends ClientBase{
         }
         StringBuilder sb = new StringBuilder();
         sb.append("Available Games:\n");
+
+        Integer i = 1;
         for (GameData game : games) {
-            sb.append(String.format("ID: %d, Name: %s", game.gameID(), game.gameName()));
+            sb.append(String.format("Game %d: %s", i++, game.gameName()));
 
             if (game.whiteUsername() != null) {
                 sb.append(", White: ").append(game.whiteUsername());
@@ -122,5 +147,20 @@ public class PostLoginClient extends ClientBase{
             sb.append("\n");
         }
         return sb.toString();
+    }
+
+    private Integer getGameIDfromMap(Integer gameNum) {
+        return gameMap.get(gameNum);
+    }
+
+    private void updateGameMap() throws ResponseException {
+        ListResult result = server.listGames(new ListRequest(authToken));
+        ArrayList<GameData> games = result.games();
+        gameMap.clear();
+        Integer i = 1;
+        for (GameData game : games) {
+            gameMap.put(i, game.gameID());
+            i++;
+        }
     }
 }
