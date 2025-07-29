@@ -61,7 +61,13 @@ public class InGameClient extends ClientBase{
 
     }
 
-    private String drawOtherBoard() {
+    private String drawWhiteBoard() {
+        dir *= 1;
+        drawBoard();
+        return "";
+    }
+
+    private String drawBlackBoard() {
         dir *= -1;
         drawBoard();
         return "";
@@ -88,7 +94,7 @@ public class InGameClient extends ClientBase{
 
             String squareColor = (checkerRow % 2 == 0) ? lightColor : darkColor;
             for (int i = 0; i < 8; i++) {
-                int col = (dir == 1) ? i : 7 - i;
+                int col = (dir == -1) ? i : 7 - i;
                 squareColor = (Objects.equals(squareColor, darkColor)) ? lightColor : darkColor;
                 String piece = board[row][col];
                 String pieceColor = "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_BLUE :
