@@ -17,6 +17,17 @@ public class InGameClient extends ClientBase{
     private int dir; // 1 for white or observe and -1 for black
     private Repl repl;
 
+    private String[][] board = {
+            {"♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"},
+            {"♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"},
+            {" ", " ", " ", " ", " ", " ", " ", " "},
+            {" ", " ", " ", " ", " ", " ", " ", " "},
+            {" ", " ", " ", " ", " ", " ", " ", " "},
+            {" ", " ", " ", " ", " ", " ", " ", " "},
+            {"♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙"},
+            {"♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"},
+    };
+
     public InGameClient(String serverUrl, Repl repl, String authToken, int direction) {
         super(serverUrl);
         this.repl = repl;
@@ -75,53 +86,27 @@ public class InGameClient extends ClientBase{
         return "you left the game";
     }
 
-
     private String drawBoard() {
         int init = (dir == 1) ? 7 : 0; // 7 is top row, 0 is bottom
         int end = (dir == 1) ? -1 : 8;
         int step = (dir == 1) ? -1 : 1;
         int checkerRow = 1;
 
-        String[][] board = {
-                {"♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"},
-                {"♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"},
-                {" ", " ", " ", " ", " ", " ", " ", " "},
-                {" ", " ", " ", " ", " ", " ", " ", " "},
-                {" ", " ", " ", " ", " ", " ", " ", " "},
-                {" ", " ", " ", " ", " ", " ", " ", " "},
-                {"♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙"},
-                {"♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"},
-        };
-
-
         printColHeaders(dir);
         for (int row = init; row != end; row += step, checkerRow++) {
             System.out.print(outerColor + letterColor + " " + (8 - row) + " ");  // left label
 
             String squareColor = (checkerRow % 2 == 0) ? lightColor : darkColor;
-            if(dir == 1) {
-                for (int col = 0; col < 8; col++) {
-                    squareColor = (Objects.equals(squareColor, darkColor)) ? lightColor : darkColor;
-                    String piece = board[row][col];
-                    String pieceColor = "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_BLUE :
-                            "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_RED : letterColor;
-                    if (piece == null || piece.equals(" ")) {
-                        System.out.print(squareColor + pieceColor + EMPTY);
-                    } else {
-                        System.out.print(squareColor + pieceColor + " " + piece + " ");
-                    }
-                }
-            } else {
-                for (int col = 7; col >= 0; col--) {
-                    squareColor = (Objects.equals(squareColor, darkColor)) ? lightColor : darkColor;
-                    String piece = board[row][col];
-                    String pieceColor = "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_BLUE :
-                            "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_RED : letterColor;
-                    if(piece == null || piece.equals(" ")) {
-                        System.out.print(squareColor + pieceColor + EMPTY);
-                    } else {
-                        System.out.print(squareColor + pieceColor + " " + piece + " ");
-                    }
+            for (int i = 0; i < 8; i++) {
+                int col = (dir == 1) ? i : 7 - i;
+                squareColor = (Objects.equals(squareColor, darkColor)) ? lightColor : darkColor;
+                String piece = board[row][col];
+                String pieceColor = "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_BLUE :
+                        "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_RED : letterColor;
+                if (piece == null || piece.equals(" ")) {
+                    System.out.print(squareColor + pieceColor + EMPTY);
+                } else {
+                    System.out.print(squareColor + pieceColor + " " + piece + " ");
                 }
             }
 
@@ -135,16 +120,14 @@ public class InGameClient extends ClientBase{
     private void printColHeaders(int dir) {
         String[] cols = { "a", "b", "c", "d", "e", "f", "g", "h" };
 
+        int start = (dir == -1) ? 0 : 7;
+        int end = (dir == -1) ? 8 : -1;
+        int step = (dir == -1) ? 1 : -1;
+
         System.out.print(outerColor + "   ");
         System.out.print(letterColor);
-        if (dir == -1) {
-            for (int col = 0; col < 8; col++) {
-                System.out.print(UNICODE_SPACE + cols[col] + " ");
-            }
-        } else {
-            for (int col = 7; col >= 0; col--) {
-                System.out.print(UNICODE_SPACE + cols[col] + " ");
-            }
+        for (int col = start; col != end; col += step) {
+            System.out.print(UNICODE_SPACE + cols[col] + " ");
         }
         System.out.println(outerColor + "   " + offBoardColor + RESET_TEXT_COLOR);
     }
