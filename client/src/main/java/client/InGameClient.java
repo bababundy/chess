@@ -55,16 +55,6 @@ public class InGameClient extends ClientBase{
         return switch (cmd) {
             case "d1" -> drawBoard();
             case "d2" -> drawOtherBoard();
-//            case "hl" -> highlight();
-//            case "m" -> move(params);
-//            case "move" -> move(params);
-//            case "make" -> move(params);
-//            case "r" -> drawBoard(params);
-//            case "redraw" -> drawBoard(params);
-//            case "c" -> changeColors(params);
-//            case "colors" -> changeColors(params);
-//            case "res" -> resign();
-//            case "resign" -> resign();
             case "leave" -> leave();
             default -> help();
         };
