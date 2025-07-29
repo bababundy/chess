@@ -56,7 +56,7 @@ public class ServerFacade {
         try {
             return this.makeRequest("PUT", path, new JoinReqHelper(req.playerColor(), req.gameID()), JoinResult.class, req.authToken());
         } catch (ResponseException e) {
-            throw new ResponseException(400, "Bad request Probably");
+            throw new ResponseException(400, "Not available");
         }
     }
 
