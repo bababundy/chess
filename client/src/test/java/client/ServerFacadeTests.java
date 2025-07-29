@@ -115,4 +115,25 @@ public class ServerFacadeTests {
         });
         assertTrue(ex.getMessage().contains("request"), "Should fail on bad gameName");
     }
+
+    @Test
+    public void goodGameClear() throws ResponseException {
+        RegisterResult result = facade.register(new RegisterRequest("player1", "password", "p1@email.com"));
+        facade.createGame(new CreateRequest(result.authToken(), "testgame"));
+        facade.clear();
+        RegisterResult result2 = facade.register(new RegisterRequest("player1", "password", "p1@email.com"));
+        ListResult result3 = facade.listGames(new ListRequest(result2.authToken()));
+        assertNull(result3.message());
+        assertTrue(result3.games().isEmpty());
+    }
+
+    @Test
+    public void goodUserClear() throws ResponseException {
+        RegisterResult result = facade.register(new RegisterRequest("player1", "password", "p1@email.com"));
+        facade.clear();
+        ResponseException ex = assertThrows(ResponseException.class, () -> {
+            facade.createGame(new CreateRequest(result.authToken(), "newGame"));
+        });
+        assertTrue(ex.getMessage().contains("request"), "User should not exist/have authorization");
+    }
 }
