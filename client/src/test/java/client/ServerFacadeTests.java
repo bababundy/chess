@@ -95,7 +95,7 @@ public class ServerFacadeTests {
         ResponseException ex = assertThrows(ResponseException.class, () -> {
             facade.joinGame(new JoinRequest(result.authToken(), "WHITE", 999));
         });
-        assertTrue(ex.getMessage().contains("request"), "Should fail on bad gameName");
+        assertTrue(ex.getMessage().contains("available"), "Should fail on bad gameID");
     }
 
     @Test
