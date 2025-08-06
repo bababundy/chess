@@ -1,5 +1,8 @@
 package websocket.messages;
 
+import chess.ChessGame;
+import com.google.gson.Gson;
+
 import java.util.Objects;
 
 /**
@@ -10,6 +13,16 @@ import java.util.Objects;
  */
 public class ServerMessage {
     ServerMessageType serverMessageType;
+    String message;
+
+    public String getMessage() {
+        return message;
+    }
+
+    public Object getGame() {
+        //convert the message to a game object
+        return new Gson().fromJson(message, ChessGame.class);
+    }
 
     public enum ServerMessageType {
         LOAD_GAME,
