@@ -1,12 +1,14 @@
 package client;
 
 import server.ResponseException;
+import websocket.NotificationHandler;
+import websocket.messages.ServerMessage;
 
 import java.util.Scanner;
 
 import static ui.EscapeSequences.*;
 
-public class Repl {
+public class Repl implements NotificationHandler {
     private ClientBase client;
 
     public Repl(String serverUrl) {
@@ -39,6 +41,12 @@ public class Repl {
     }
 
     private void printPrompt() {
-        System.out.print("\n" + "[" + client.state + "]" + ">>> ");
+        System.out.print(RESET_TEXT_COLOR + "\n" + "[" + client.state + "]" + ">>> ");
+    }
+
+    @Override
+    public void notify(ServerMessage message) {
+        System.out.println(SET_TEXT_COLOR_RED + message.toString());
+        printPrompt();
     }
 }

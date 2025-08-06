@@ -4,6 +4,8 @@ import model.GameData;
 import requests.*;
 import results.*;
 import server.ResponseException;
+import websocket.ChessClient;
+import websocket.WebSocketFacade;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,7 +102,9 @@ public class PostLoginClient extends ClientBase{
 
         int dir = (playerColor == "WHITE") ? 1 : -1;
         state = State.INGAME;
-        repl.setClient(new InGameClient(serverUrl, repl, authToken, dir));
+        WebSocketFacade ws = new WebSocketFacade(serverUrl, repl);
+        ws.connect(authToken, gameID);
+        repl.setClient(new ChessClient(serverUrl, repl, authToken, dir));
         return "Joined game " + gameID + " as " + playerColor.toUpperCase();
     }
 
@@ -115,7 +119,7 @@ public class PostLoginClient extends ClientBase{
         }
 
         state = State.INGAME;
-        repl.setClient(new InGameClient(serverUrl, repl, authToken, 1));
+        repl.setClient(new ChessClient(serverUrl, repl, authToken, 1));
         return "Observing game " + gameID + " as WHITE";
     }
 

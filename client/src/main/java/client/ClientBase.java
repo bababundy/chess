@@ -1,6 +1,7 @@
 package client;
 
 import server.ServerFacade;
+import websocket.WebSocketFacade;
 
 public class ClientBase {
     protected final ServerFacade server;

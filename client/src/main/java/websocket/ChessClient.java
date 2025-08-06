@@ -1,11 +1,18 @@
-package client;
+package websocket;
+
+import client.ClientBase;
+import client.PostLoginClient;
+import client.Repl;
+import client.State;
+import server.ResponseException;
+import websocket.messages.ServerMessage;
 
 import java.util.Arrays;
 import java.util.Objects;
 
 import static ui.EscapeSequences.*;
 
-public class InGameClient extends ClientBase{
+public class ChessClient extends ClientBase implements NotificationHandler {
 
     private String outerColor = SET_BG_COLOR_LIGHT_GREY;
     private String letterColor = SET_TEXT_COLOR_DARK_GREY;
@@ -16,23 +23,39 @@ public class InGameClient extends ClientBase{
     private String authToken;
     private int dir; // 1 for white or observe and -1 for black
     private Repl repl;
+    private WebSocketFacade ws;
 
-    private String[][] board = {
-            {"♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"},
-            {"♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"},
-            {" ", " ", " ", " ", " ", " ", " ", " "},
-            {" ", " ", " ", " ", " ", " ", " ", " "},
-            {" ", " ", " ", " ", " ", " ", " ", " "},
-            {" ", " ", " ", " ", " ", " ", " ", " "},
-            {"♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙"},
-            {"♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"},
-    };
+    private String[][] board;
 
-    public InGameClient(String serverUrl, Repl repl, String authToken, int direction) {
+    public ChessClient(String serverUrl, Repl repl, String authToken, int direction) {
         super(serverUrl);
         this.repl = repl;
         this.authToken = authToken;
         this.dir = direction;
+        try {
+            this.ws = new WebSocketFacade(serverUrl, this);
+        } catch (ResponseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void notify(ServerMessage message) {
+        switch(message.getServerMessageType()) {
+            case NOTIFICATION -> displayNotification(message.getMessage());
+            case ERROR -> displayError(message.getMessage());
+            case LOAD_GAME -> loadGame(message.getGame());
+        }
+    }
+
+    private void displayNotification(String message) {
+
+    }
+
+    private void displayError(String message) {
+    }
+
+    private void loadGame(Object game) {
     }
 
     @Override
@@ -55,11 +78,60 @@ public class InGameClient extends ClientBase{
         return switch (cmd) {
             case "draww" -> drawWhiteBoard();
             case "drawb" -> drawBlackBoard();
-
+            case "hl" -> highlight();
+            case "m" -> move(params);
+            case "move" -> move(params);
+            case "make" -> move(params);
+            case "r" -> drawBoard();
+            case "redraw" -> drawBoard();
+            case "c" -> changeColors(params);
+            case "colors" -> changeColors(params);
+            case "res" -> resign();
+            case "resign" -> resign();
             case "leave" -> leave();
             default -> help();
         };
 
+    }
+
+    private String highlight() {
+        //get the valid moves
+
+        //print the board but if the valid move location then different color
+        return "";
+    }
+
+    private String resign() {
+        //set game to null or delete game?
+
+        return "";
+    }
+
+    private String changeColors(String[] params) {
+        //read inputs
+
+        //ensure valid
+
+        //perform change
+
+        //report status
+
+        return "You changed the colors to " + darkColor + " and " + lightColor;
+    }
+
+    private String move(String[] params) {
+        //validate one move was entered
+        if(params.length >= 1) {
+            //validate that the move is a valid move
+
+            //send to websocket
+
+        }
+
+//        ws = new WebSocketFacade(serverUrl, notificationHandler);
+//        ws.move(message);
+        //draw fresh board
+        return "";
     }
 
     private String drawWhiteBoard() {
@@ -76,6 +148,8 @@ public class InGameClient extends ClientBase{
 
     private String leave() {
         //handle any closing game stuff
+        ws.leave();
+        ws = null;
 
         state = State.SIGNEDIN;
         PostLoginClient newClient = new PostLoginClient(serverUrl, repl, authToken);

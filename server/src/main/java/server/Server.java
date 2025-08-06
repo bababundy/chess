@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import dataaccess.*;
 import dataaccess.memory.*;
 import dataaccess.mysql.*;
+import server.websocket.WebSocketHandler;
 import service.*;
 import requests.*;
 import results.*;
@@ -13,9 +14,13 @@ public class Server {
     private UserService userService;
     private GameService gameService;
     private ClearService clearService;
+    private WebSocketHandler webSocketHandler;
 
     public int run(int desiredPort){
         Spark.port(desiredPort);
+        webSocketHandler = new WebSocketHandler();
+        Spark.webSocket("/ws", WebSocketHandler.class);
+
         Spark.staticFiles.location("web");
 
         if (DAOFacade.userDAO == null) {

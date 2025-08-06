@@ -4,10 +4,10 @@ import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import dataaccess.daointerfaces.AuthDAO;
 import dataaccess.mysql.MySqlAuthDao;
-import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ServerMessage;
 
@@ -27,15 +27,15 @@ public class WebSocketHandler {
 
             switch (command.getCommandType()) {
                 case CONNECT -> connect(session, username, command);
-                case MAKE_MOVE -> makeMove(session, username, command);
-                case LEAVE -> leaveGame(session, username, command);
+                case MAKE_MOVE -> makeMove(session, username, new Gson().fromJson(message, MakeMoveCommand.class));
+                case LEAVE -> leaveGame(session, command);
                 case RESIGN -> resign(session, username, command);
             }
         } catch (DataAccessException ex) {
-            sendMessage(session.getRemote(), new ErrorMessage("Error: unauthorized"));
+            connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: unauthorized"));
         } catch (Exception ex) {
             ex.printStackTrace();
-            sendMessage(session.getRemote(), new ErrorMessage("Error: " + ex.getMessage()));
+            connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: " + ex.getMessage()));
         }
     }
 
@@ -47,23 +47,32 @@ public class WebSocketHandler {
         connections.remove(new Connection(authToken, gameID, session));
     }
 
-    private void sendMessage(RemoteEndpoint remote, ErrorMessage errorMessage) throws IOException {
-        remote.sendString(errorMessage.toString());
+    private void connect(Session session, String username, UserGameCommand command) throws IOException {
+        connections.add(new Connection(command.getAuthToken(), command.getGameID(), session));
+        var message = String.format("%s has joined the game", username);
+        connections.broadcast(command.getAuthToken(), new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, message));
+//        connections.sendLoadGame();
+    }
+
+    private void makeMove(Session session, String username, MakeMoveCommand command) throws IOException {
+
+        //validate that the move is good?
+
+
+        var message = String.format("%s moved to %s", username, command.getMove().toString());
+        connections.broadcast(command.getAuthToken(), new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, message));
+//        connections.sendLoadGame();
+    }
+
+    private void leaveGame(Session session, UserGameCommand command) {
+
+
+        endSession(command.getAuthToken(), command.getGameID(), session);
     }
 
     private void resign(Session session, String username, UserGameCommand command) {
-    }
 
-    private void leaveGame(Session session, String username, UserGameCommand command) {
-
-    }
-
-    private void makeMove(Session session, String username, UserGameCommand command) {
-
-    }
-
-    private void connect(Session session, String username, UserGameCommand command) {
-
+        endSession(command.getAuthToken(), command.getGameID(), session);
     }
 
 //    private void enter(String visitorName, Session session) throws IOException {

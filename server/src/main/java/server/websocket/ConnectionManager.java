@@ -1,8 +1,13 @@
 package server.websocket;
 
+import chess.ChessGame;
+import model.GameData;
+import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.Session;
 import websocket.messages.ServerMessage;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ConnectionManager {
@@ -16,21 +21,43 @@ public class ConnectionManager {
         connections.remove(conn.authToken);
     }
 
-//    public void broadcast(String excludeVisitorName, ServerMessage message) throws IOException {
-//        var removeList = new ArrayList<Connection>();
-//        for (var c : connections.values()) {
-//            if (c.session.isOpen()) {
-//                if (!c.visitorName.equals(excludeVisitorName)) {
-//                    c.send(message.toString());
-//                }
-//            } else {
-//                removeList.add(c);
-//            }
-//        }
-//
-//        // Clean up any connections that were left open.
-//        for (var c : removeList) {
-//
-//        }
-//    }
+    public void sendNotification(String msg) {
+
+    }
+
+    void sendErrorMessage(RemoteEndpoint remote, ErrorMessage errorMessage) throws IOException {
+        remote.sendString(errorMessage.toString());
+    }
+
+    public void sendLoadGame(int gameID, ChessGame game) throws IOException {
+        var removeList = new ArrayList<Connection>();
+        for (var c : connections.values()) {
+            if (c.session.isOpen()) {
+                if (c.gameID == (gameID)) {
+                    c.send(game.toString());
+                }
+            } else {
+                removeList.add(c);
+            }
+        }
+        for (var c : removeList) {
+            connections.remove(c);
+        }
+    }
+
+    public void broadcast(String excludeAuth, ServerMessage message) throws IOException {
+        var removeList = new ArrayList<Connection>();
+        for (var c : connections.values()) {
+            if (c.session.isOpen()) {
+                if (!c.authToken.equals(excludeAuth)) {
+                    c.send(message.toString());
+                }
+            } else {
+                removeList.add(c);
+            }
+        }
+        for (var c : removeList) {
+            connections.remove(c);
+        }
+    }
 }
