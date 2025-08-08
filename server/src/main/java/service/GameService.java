@@ -125,5 +125,17 @@ public class GameService {
         return new ListResult(games, null);
     }
 
+    public void resign(String authToken, int gameID) throws DataAccessException {
+        GameData game = gameDAO.getGameByID(gameID);
+        String username = authDAO.getByToken(authToken).username();
+        if (!username.equals(game.whiteUsername()) && !username.equals(game.blackUsername())) {
+            throw new DataAccessException("Observers can't resign");
+        }
+        if (game.game().isGameOver()) {
+            throw new DataAccessException("Game already over");
+        }
+        game.game().setGameOver(true);
+        gameDAO.updateGame(gameID, game);
+    }
 }
 
