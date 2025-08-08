@@ -1,46 +1,44 @@
 package websocket;
 
-import chess.ChessGame;
-import client.ClientBase;
-import client.PostLoginClient;
-import client.Repl;
-import client.State;
+import chess.*;
+import client.*;
 import server.ResponseException;
-import websocket.messages.ErrorMessage;
-import websocket.messages.LoadGameMessage;
-import websocket.messages.NotificationMessage;
-import websocket.messages.ServerMessage;
+import websocket.messages.*;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Objects;
 
 import static ui.EscapeSequences.*;
 
 public class ChessClient extends ClientBase implements NotificationHandler {
 
-    private String outerColor = SET_BG_COLOR_LIGHT_GREY;
-    private String letterColor = SET_TEXT_COLOR_DARK_GREY;
-    private String lightColor = SET_BG_COLOR_WHITE;
-    private String darkColor = SET_BG_COLOR_BLACK;
-    private String offBoardColor = RESET_BG_COLOR;
+    private final String outerColor = SET_BG_COLOR_LIGHT_GREY;
+    private final String letterColor = SET_TEXT_COLOR_DARK_GREY;
+    private final String lightColor = SET_BG_COLOR_WHITE;
+    private final String darkColor = SET_BG_COLOR_BLACK;
+    private final String offBoardColor = RESET_BG_COLOR;
 
     private String authToken;
-    private int dir; // 1 for white or observe and -1 for black
+    private int playerColor; // 1 for white, 0 observe, and -1 for black
     private Repl repl;
+    private int gameID;
     private WebSocketFacade ws;
 
     private String[][] board;
+    private ChessGame currentGame;
 
-    public ChessClient(String serverUrl, Repl repl, String authToken, int direction) {
+    public ChessClient(String serverUrl, Repl repl, String authToken, int direction, int gameID) {
         super(serverUrl);
         this.repl = repl;
         this.authToken = authToken;
-        this.dir = direction;
-        try {
-            this.ws = new WebSocketFacade(serverUrl, this);
-        } catch (ResponseException e) {
-            throw new RuntimeException(e);
-        }
+        this.playerColor = direction;
+        this.gameID = gameID;
+    }
+
+    public void setWebSocketFacade(WebSocketFacade ws) {
+        this.ws = ws;
     }
 
     @Override
@@ -53,23 +51,66 @@ public class ChessClient extends ClientBase implements NotificationHandler {
     }
 
     private void displayNotification(NotificationMessage message) {
-        
+        System.out.println(SET_TEXT_COLOR_YELLOW + message.getMessage() + RESET_TEXT_COLOR);
+        repl.printPrompt();
     }
 
     private void displayError(ErrorMessage message) {
-
+        System.out.println(SET_TEXT_COLOR_RED + message.getErrorMessage() + RESET_TEXT_COLOR);
+        repl.printPrompt();
     }
 
     private void loadGame(LoadGameMessage message) {
+        this.currentGame = message.getGame();
+        this.board = convertBoardToUnicode(currentGame.getBoard());
+        System.out.println();
+        drawBoard(playerColor);
+
+        if (currentGame.isGameOver()) {
+            System.out.println(SET_TEXT_COLOR_YELLOW + "Game over." + RESET_TEXT_COLOR);
+        } else {
+            System.out.println(SET_TEXT_COLOR_BLUE + "Turn: " + currentGame.getTeamTurn() + RESET_TEXT_COLOR);
+        }
+        repl.printPrompt();
     }
+
+    private String[][] convertBoardToUnicode(ChessBoard board) {
+        String[][] unicodeBoard = new String[8][8];
+
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                ChessPiece piece = board.getPiece(new ChessPosition(row + 1, col + 1));
+                if (piece == null) {
+                    unicodeBoard[row][col] = " ";
+                    continue;
+                }
+
+                ChessPiece.PieceType type = piece.getPieceType();
+                ChessGame.TeamColor color = piece.getTeamColor();
+
+                String symbol = switch (type) {
+                    case KING -> (color == ChessGame.TeamColor.WHITE) ? "♔" : "♚";
+                    case QUEEN -> (color == ChessGame.TeamColor.WHITE) ? "♕" : "♛";
+                    case ROOK -> (color == ChessGame.TeamColor.WHITE) ? "♖" : "♜";
+                    case BISHOP -> (color == ChessGame.TeamColor.WHITE) ? "♗" : "♝";
+                    case KNIGHT -> (color == ChessGame.TeamColor.WHITE) ? "♘" : "♞";
+                    case PAWN -> (color == ChessGame.TeamColor.WHITE) ? "♙" : "♟";
+                };
+
+                unicodeBoard[row][col] = symbol;
+            }
+        }
+        return unicodeBoard;
+    }
+
 
     @Override
     public String help() {
         return """
                 Options:
                 Make a move: "m", "move", "make" <source> <destination> <optional promotion>(e.g. f5 e4 q)
+                Highlight moves: "hl", "highlight"
                 Redraw Chess Board: "r", "redraw"
-                Change color scheme: "c", "colors" <color number>
                 Resign from game: "res", "resign"
                 Leave game: "leave"
                 """;
@@ -81,80 +122,123 @@ public class ChessClient extends ClientBase implements NotificationHandler {
         var cmd = (tokens.length > 0) ? tokens[0] : "help";
         var params = Arrays.copyOfRange(tokens, 1, tokens.length);
         return switch (cmd) {
-            case "draww" -> drawWhiteBoard();
-            case "drawb" -> drawBlackBoard();
-            case "hl" -> highlight();
-            case "m" -> move(params);
-            case "move" -> move(params);
-            case "make" -> move(params);
-            case "r" -> drawBoard();
-            case "redraw" -> drawBoard();
-            case "c" -> changeColors(params);
-            case "colors" -> changeColors(params);
-            case "res" -> resign();
-            case "resign" -> resign();
+            case "hl", "highlight" -> highlight();
+            case "m", "move", "make" -> move(params);
+            case "r", "redraw" -> drawBoard(playerColor);
+            case "res", "resign" -> resign();
             case "leave" -> leave();
             default -> help();
         };
-
     }
 
     private String highlight() {
-        //get the valid moves
+        if (currentGame == null) {
+            return SET_TEXT_COLOR_RED + "No game loaded yet." + RESET_TEXT_COLOR;
+        }
 
-        //print the board but if the valid move location then different color
+        System.out.print("Enter the position to highlight (e.g., e2): ");
+        String input = repl.readLine();
+        if (input == null) return "";
+
+        input = input.trim().toLowerCase();
+        ChessPosition startPos;
+        try {
+            startPos = parsePosition(input);
+        } catch (IllegalArgumentException ex) {
+            return SET_TEXT_COLOR_RED + "Invalid input. Use like 'e2'." + RESET_TEXT_COLOR;
+        }
+
+        var validMoves = currentGame.validMoves(startPos);
+        if (validMoves == null || validMoves.isEmpty()) {
+            return SET_TEXT_COLOR_YELLOW + "No valid moves for " + input + "." + RESET_TEXT_COLOR;
+        }
+
+        boolean[][] highlights = new boolean[8][8];
+        for (ChessMove move : validMoves) {
+            ChessPosition end = move.getEndPosition(); // 1-based
+            highlights[end.getRow() - 1][end.getColumn() - 1] = true;
+        }
+        drawBoard(playerColor, highlights);
         return "";
     }
 
     private String resign() {
-        //set game to null or delete game?
-
-        return "";
-    }
-
-    private String changeColors(String[] params) {
-        //read inputs
-
-        //ensure valid
-
-        //perform change
-
-        //report status
-
-        return "You changed the colors to " + darkColor + " and " + lightColor;
+        try {
+            ws.resign(authToken, gameID);
+            System.out.println(SET_TEXT_COLOR_YELLOW + "You resigned from the game." + RESET_TEXT_COLOR);
+            return leave(); // Reuse your existing `leave()` logic to exit the game properly
+        } catch (IOException | ResponseException e) {
+            return SET_TEXT_COLOR_RED + "Failed to resign: " + e.getMessage() + RESET_TEXT_COLOR;
+        }
     }
 
     private String move(String[] params) {
-        //validate one move was entered
-        if(params.length >= 1) {
-            //validate that the move is a valid move
-
-            //send to websocket
-
+        if (params.length < 2 || params.length > 3) {
+            return "Expected: <startPos> <endPos> <optional promotionType>";
+        }
+        if (currentGame == null) {
+            return SET_TEXT_COLOR_RED + "No game loaded yet." + RESET_TEXT_COLOR;
         }
 
-//        ws = new WebSocketFacade(serverUrl, notificationHandler);
-//        ws.move(message);
-        //draw fresh board
-        return "";
+        try {
+            ChessPosition from = parsePosition(params[0]);
+            ChessPosition to   = parsePosition(params[1]);
+
+            ChessPiece.PieceType promotion = null;
+            if (params.length == 3) {
+                promotion = switch (params[2].toLowerCase()) {
+                    case "q" -> ChessPiece.PieceType.QUEEN;
+                    case "r" -> ChessPiece.PieceType.ROOK;
+                    case "b" -> ChessPiece.PieceType.BISHOP;
+                    case "n" -> ChessPiece.PieceType.KNIGHT;
+                    default  -> null;
+                };
+                if (promotion == null) {
+                    return "Invalid promotion piece. Use: q r b n";
+                }
+            }
+
+            ChessMove move = new ChessMove(from, to, promotion);
+            ws.makeMove(authToken, gameID, move);
+
+            return "Move sent: " + params[0] + " -> " + params[1] + (promotion != null ? " = " + promotion : "");
+        } catch (IllegalArgumentException e) {
+            return SET_TEXT_COLOR_RED + "Invalid square. Use like: e2 e4 [q|r|b|n]" + RESET_TEXT_COLOR;
+        } catch (ResponseException | IOException e) {
+            return SET_TEXT_COLOR_RED + "Failed to send move: " + e.getMessage() + RESET_TEXT_COLOR;
+        }
     }
 
-    private String drawWhiteBoard() {
-        dir *= 1;
-        drawBoard();
-        return "";
+
+    private ChessPosition parsePosition(String pos) {
+        if (pos == null || pos.length() != 2) throw new IllegalArgumentException("Invalid square: " + pos);
+        char file = Character.toLowerCase(pos.charAt(0)); // a..h
+        char rank = pos.charAt(1);                         // 1..8
+        if (file < 'a' || file > 'h' || rank < '1' || rank > '8') {
+            throw new IllegalArgumentException("Invalid square: " + pos);
+        }
+
+        // Flip file mapping: a→h, b→g, ..., h→a
+        int flippedCol = 8 - (file - 'a'); // a→7, b→6, ..., h→0
+        int col = flippedCol;          // 1-indexed
+
+        int row = (rank - '0'); // ranks remain 1..8
+
+        return new ChessPosition(row, col);
     }
 
-    private String drawBlackBoard() {
-        dir *= -1;
-        drawBoard();
-        return "";
-    }
+
 
     private String leave() {
-        //handle any closing game stuff
-        ws.leave();
-        ws = null;
+        if (ws != null) {
+            try {
+                ws.leave(authToken, gameID);
+            } catch (ResponseException | IOException e) {
+                throw new RuntimeException(e);
+            }
+            ws.close();
+            ws = null;
+        }
 
         state = State.SIGNEDIN;
         PostLoginClient newClient = new PostLoginClient(serverUrl, repl, authToken);
@@ -162,31 +246,48 @@ public class ChessClient extends ClientBase implements NotificationHandler {
         return "you left the game";
     }
 
-    private String drawBoard() {
-        int init = (dir == 1) ? 7 : 0; // 7 is top row, 0 is bottom
-        int end = (dir == 1) ? -1 : 8;
-        int step = (dir == 1) ? -1 : 1;
+    private String drawBoard(int dir) {
+        return drawBoard(dir, null);
+    }
+
+    private String drawBoard(int dir, boolean[][] highlights) {
+        if (dir == 0) { dir = 1; }
+
+        // Row/col iteration order matches your existing working output
+        int init = (dir == 1) ? 7 : 0;     // start row
+        int end  = (dir == 1) ? -1 : 8;    // end (exclusive)
+        int step = (dir == 1) ? -1 : 1;    // step
         int checkerRow = 1;
 
         printColHeaders(dir);
         for (int row = init; row != end; row += step, checkerRow++) {
-            System.out.print(outerColor + letterColor + " " + (8 - row) + " ");  // left label
+            System.out.print(outerColor + letterColor + " " + (row + 1) + " "); // left rank label
 
             String squareColor = (checkerRow % 2 == 0) ? lightColor : darkColor;
             for (int i = 0; i < 8; i++) {
-                int col = (dir == -1) ? i : 7 - i;
+                int col = (dir == -1) ? i : 7 - i; // your working column order
+                // alternate square color
                 squareColor = (Objects.equals(squareColor, darkColor)) ? lightColor : darkColor;
+
+                // apply highlight if provided
+                String bg = squareColor;
+                if (highlights != null && row >= 0 && row < 8 && col >= 0 && col < 8 && highlights[row][col]) {
+                    bg = SET_BG_COLOR_GREEN;
+                }
+
                 String piece = board[row][col];
-                String pieceColor = "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_BLUE :
-                        "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_RED : letterColor;
+                String pieceColor =
+                        "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_WHITE :
+                                "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_BLACK : letterColor;
+
                 if (piece == null || piece.equals(" ")) {
-                    System.out.print(squareColor + pieceColor + EMPTY);
+                    System.out.print(bg + pieceColor + EMPTY);
                 } else {
-                    System.out.print(squareColor + pieceColor + " " + piece + " ");
+                    System.out.print(bg + pieceColor + " " + piece + " ");
                 }
             }
 
-            System.out.println(outerColor + letterColor + " " + (8 - row) + " " + offBoardColor);
+            System.out.println(outerColor + letterColor + " " + (row + 1) + " " + offBoardColor);
         }
         printColHeaders(dir);
         System.out.print(RESET_TEXT_COLOR);
@@ -196,9 +297,9 @@ public class ChessClient extends ClientBase implements NotificationHandler {
     private void printColHeaders(int dir) {
         String[] cols = { "a", "b", "c", "d", "e", "f", "g", "h" };
 
-        int start = (dir == -1) ? 0 : 7;
-        int end = (dir == -1) ? 8 : -1;
-        int step = (dir == -1) ? 1 : -1;
+        int start = (dir == 1) ? 0 : 7;
+        int end = (dir == 1) ? 8 : -1;
+        int step = (dir == 1) ? 1 : -1;
 
         System.out.print(outerColor + "   ");
         System.out.print(letterColor);

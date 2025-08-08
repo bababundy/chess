@@ -5,8 +5,10 @@ import requests.*;
 import results.*;
 import server.ResponseException;
 import websocket.ChessClient;
+import websocket.NotificationDelegator;
 import websocket.WebSocketFacade;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -81,6 +83,7 @@ public class PostLoginClient extends ClientBase{
             throw new ResponseException(400, "Expected: <ID> [WHITE|BLACK]");
         }
         Integer gameID;
+        updateGameMap();
         try {
             Integer gameNum = Integer.parseInt(params[0]);
             gameID = getGameIDfromMap(gameNum);
@@ -100,11 +103,21 @@ public class PostLoginClient extends ClientBase{
             return result.message();
         }
 
-        int dir = (playerColor == "WHITE") ? 1 : -1;
+        int dir = (playerColor.equals("WHITE")) ? 1 : -1;
         state = State.INGAME;
-        WebSocketFacade ws = new WebSocketFacade(serverUrl, repl);
-        ws.connect(authToken, gameID);
-        repl.setClient(new ChessClient(serverUrl, repl, authToken, dir));
+        ChessClient chessNotifier = new ChessClient(serverUrl, repl, authToken, dir, gameID);
+        WebSocketFacade ws = new WebSocketFacade(serverUrl, new NotificationDelegator(
+                chessNotifier,
+                repl
+        ));
+        chessNotifier.setWebSocketFacade(ws);
+        try {
+            ws.connect(authToken, gameID);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        repl.setClient(chessNotifier);
+
         return "Joined game " + gameID + " as " + playerColor.toUpperCase();
     }
 
@@ -112,6 +125,9 @@ public class PostLoginClient extends ClientBase{
         if(params.length != 1) {
             throw new ResponseException(400, "Expected: <ID>");
         }
+
+        updateGameMap();
+
         Integer gameNum = Integer.parseInt(params[0]);
         Integer gameID = getGameIDfromMap(gameNum);
         if(gameID == null){
@@ -119,7 +135,19 @@ public class PostLoginClient extends ClientBase{
         }
 
         state = State.INGAME;
-        repl.setClient(new ChessClient(serverUrl, repl, authToken, 1));
+        ChessClient chessNotifier = new ChessClient(serverUrl, repl, authToken, 0, gameID);
+        WebSocketFacade ws = new WebSocketFacade(serverUrl, new NotificationDelegator(
+                chessNotifier,
+                repl
+        ));
+        chessNotifier.setWebSocketFacade(ws);
+        try {
+            ws.connect(authToken, gameID);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        repl.setClient(chessNotifier);
+
         return "Observing game " + gameID + " as WHITE";
     }
 

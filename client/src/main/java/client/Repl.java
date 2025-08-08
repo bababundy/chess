@@ -1,6 +1,5 @@
 package client;
 
-import server.ResponseException;
 import websocket.NotificationHandler;
 import websocket.messages.ServerMessage;
 
@@ -10,6 +9,7 @@ import static ui.EscapeSequences.*;
 
 public class Repl implements NotificationHandler {
     private ClientBase client;
+    private final Scanner scanner = new Scanner(System.in);
 
     public Repl(String serverUrl) {
         client = new PreLoginClient(serverUrl, this);
@@ -40,7 +40,11 @@ public class Repl implements NotificationHandler {
         System.out.println();
     }
 
-    private void printPrompt() {
+    public String readLine() {
+        return scanner.nextLine();
+    }
+
+    public void printPrompt() {
         System.out.print(RESET_TEXT_COLOR + "\n" + "[" + client.state + "]" + ">>> ");
     }
 

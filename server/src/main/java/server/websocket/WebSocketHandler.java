@@ -75,7 +75,15 @@ public class WebSocketHandler {
             throw new DataAccessException("Game not found");
         }
         connections.add(new Connection(command.getAuthToken(), command.getGameID(), session));
-        var message = String.format("%s has joined the game", username);
+        String color = null;
+        if (username.equals(game.whiteUsername())) {
+            color = "WHITE";
+        } else if (username.equals(game.blackUsername())) {
+            color = "BLACK";
+        } else {
+            color = "OBSERVER";
+        }
+        var message = username + " has joined the game as " + color;
         connections.broadcast(command.getGameID(), command.getAuthToken(), new NotificationMessage(message));
         GameData gameData = gameDAO.getGameByID(command.getGameID());
         connections.sendLoadGameToOne(session, gameData.game());
@@ -114,7 +122,7 @@ public class WebSocketHandler {
             String message = username + " moved to " + command.getMove().toString();
             connections.broadcast(command.getGameID(), command.getAuthToken(), new NotificationMessage(message));
         } catch (Exception ex) {
-            connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: " + ex.getMessage()));
+            connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: General make move error" + ex.getMessage()));
         }
     }
 
