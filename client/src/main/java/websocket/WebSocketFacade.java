@@ -50,15 +50,6 @@ public class WebSocketFacade extends Endpoint {
     public void onOpen(Session session, EndpointConfig endpointConfig) {
     }
 
-
-
-    //this.session.getBasicRemote().sendText(msg);
-
-//        CONNECT,
-//        MAKE_MOVE,
-//        LEAVE,
-//        RESIGN
-
     public void connect(String authToken, Integer gameID) throws ResponseException {
         try {
             var command = new UserGameCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID);
@@ -73,24 +64,5 @@ public class WebSocketFacade extends Endpoint {
     }
     public void resign() {
     }
-
-//    public void enterPetShop(String visitorName) throws ResponseException {
-//        try {
-//            var action = new Action(Action.Type.ENTER, visitorName);
-//            this.session.getBasicRemote().sendText(new Gson().toJson(action));
-//        } catch (IOException ex) {
-//            throw new ResponseException(500, ex.getMessage());
-//        }
-//    }
-//
-//    public void leavePetShop(String visitorName) throws ResponseException {
-//        try {
-//            var action = new Action(Action.Type.EXIT, visitorName);
-//            this.session.getBasicRemote().sendText(new Gson().toJson(action));
-//            this.session.close();
-//        } catch (IOException ex) {
-//            throw new ResponseException(500, ex.getMessage());
-//        }
-//    }
 
 }
