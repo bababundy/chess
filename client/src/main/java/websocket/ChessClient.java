@@ -1,10 +1,14 @@
 package websocket;
 
+import chess.ChessGame;
 import client.ClientBase;
 import client.PostLoginClient;
 import client.Repl;
 import client.State;
 import server.ResponseException;
+import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
 
 import java.util.Arrays;
@@ -42,20 +46,21 @@ public class ChessClient extends ClientBase implements NotificationHandler {
     @Override
     public void notify(ServerMessage message) {
         switch(message.getServerMessageType()) {
-            case NOTIFICATION -> displayNotification(message.getMessage());
-            case ERROR -> displayError(message.getMessage());
-            case LOAD_GAME -> loadGame(message.getGame());
+            case NOTIFICATION -> displayNotification((NotificationMessage) message);
+            case ERROR -> displayError((ErrorMessage) message);
+            case LOAD_GAME -> loadGame((LoadGameMessage) message);
         }
     }
 
-    private void displayNotification(String message) {
+    private void displayNotification(NotificationMessage message) {
+        
+    }
+
+    private void displayError(ErrorMessage message) {
 
     }
 
-    private void displayError(String message) {
-    }
-
-    private void loadGame(Object game) {
+    private void loadGame(LoadGameMessage message) {
     }
 
     @Override
