@@ -14,38 +14,19 @@ public class Server {
     private UserService userService;
     private GameService gameService;
     private ClearService clearService;
-    private WebSocketHandler webSocketHandler;
 
     public int run(int desiredPort){
         Spark.port(desiredPort);
-        webSocketHandler = new WebSocketHandler();
         Spark.webSocket("/ws", WebSocketHandler.class);
-
         Spark.staticFiles.location("web");
 
-        if (DAOFacade.userDAO == null) {
-            DAOFacade.userDAO = new MemoryUserDao();
-        }
-        if (DAOFacade.authDAO == null) {
-            DAOFacade.authDAO = new MemoryAuthDao();
-        }
-        if (DAOFacade.gameDAO == null) {
-            DAOFacade.gameDAO = new MemoryGameDao();
-        }
-        if (true) { //put true if SQL and false if memory
+        try {
             DAOFacade.userDAO = new MySqlUserDao();
-            try {
-                DAOFacade.authDAO = new MySqlAuthDao();
-            } catch (DataAccessException e) {
-                throw new RuntimeException("setup failure");
-            }
+            DAOFacade.authDAO = new MySqlAuthDao();
             DAOFacade.gameDAO = new MySqlGameDao();
-
-            try {
-                new SqlDaoHelper().configureDatabase();
-            } catch (DataAccessException e) {
-                throw new RuntimeException("Failed to configure SQL database", e);
-            }
+            new SqlDaoHelper().configureDatabase();
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Failed to configure SQL database", e);
         }
 
         userService = new UserService(DAOFacade.userDAO, DAOFacade.authDAO);
