@@ -119,8 +119,12 @@ public class WebSocketHandler {
     }
 
     private ChessGame.TeamColor getPlayerColor(String username, GameData game) {
-        if (username.equals(game.whiteUsername())) return ChessGame.TeamColor.WHITE;
-        if (username.equals(game.blackUsername())) return ChessGame.TeamColor.BLACK;
+        if (username.equals(game.whiteUsername())) {
+            return ChessGame.TeamColor.WHITE;
+        }
+        if (username.equals(game.blackUsername())) {
+            return ChessGame.TeamColor.BLACK;
+        }
         return null; // observer
     }
 
@@ -162,13 +166,7 @@ public class WebSocketHandler {
             return;
         }
         game.setGameOver(true);
-        GameData updated = new GameData(
-                gameData.gameID(),
-                gameData.gameName(),
-                gameData.whiteUsername(),
-                gameData.blackUsername(),
-                game
-        );
+        GameData updated = new GameData(gameData.gameID(), gameData.gameName(),gameData.whiteUsername(), gameData.blackUsername(), game);
         gameDAO.updateGame(command.getGameID(), updated);
         String msg = username + " has resigned from the game";
         connections.broadcastToAll(command.getGameID(), new NotificationMessage(msg));
