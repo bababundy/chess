@@ -126,6 +126,24 @@ public class WebSocketHandler {
 
     private void leaveGame(Session session, UserGameCommand command) throws IOException, DataAccessException {
         String username = authDAO.getByToken(command.getAuthToken()).username();
+        GameData gameData = gameDAO.getGameByID(command.getGameID());
+
+        boolean isPlayer = false;
+        String white = gameData.whiteUsername();
+        String black = gameData.blackUsername();
+        if (username.equals(white)) {
+            white = null;
+            isPlayer = true;
+        } else if (username.equals(black)) {
+            black = null;
+            isPlayer = true;
+        }
+        if (isPlayer) {
+            GameData updatedGameData = new GameData(
+                    gameData.gameID(), white, black, gameData.gameName(), gameData.game()
+            );
+            gameDAO.updateGame(command.getGameID(), updatedGameData);
+        }
         String message = username + " has left the game";
         connections.broadcast(command.getGameID(), command.getAuthToken(), new NotificationMessage(message));
         endSession(command.getAuthToken());

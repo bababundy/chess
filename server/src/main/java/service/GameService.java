@@ -82,19 +82,21 @@ public class GameService {
         //3. check if username is already taken in game
         //4. update game in database GameDao.updateGame(u)
         GameData game = gameDAO.getGameByID(gameID);
+
         if(playerColor.equals("WHITE")){
-            if(Objects.equals(game.whiteUsername(), null) || Objects.equals(game.whiteUsername(), user.username())){
+            if(game.whiteUsername() == null || game.whiteUsername().equals(user.username())){
                 gameDAO.updateGame(gameID, new GameData(gameID, user.username(), game.blackUsername(), game.gameName(), game.game()));
             } else {
-                throw new DataAccessException("already Taken");
+                throw new DataAccessException("Error: already taken");
             }
         } else {
-            if(Objects.equals(game.blackUsername(), null) || Objects.equals(game.blackUsername(), user.username())){
+            if(game.blackUsername() == null || game.blackUsername().equals(user.username())){
                 gameDAO.updateGame(gameID, new GameData(gameID, game.whiteUsername(), user.username(), game.gameName(), game.game()));
             } else {
-                throw new DataAccessException("already Taken");
+                throw new DataAccessException("Error: already taken");
             }
         }
+
 
         //5. create result and return
         return new JoinResult(null);
