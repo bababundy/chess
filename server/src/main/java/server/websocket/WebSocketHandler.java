@@ -81,14 +81,41 @@ public class WebSocketHandler {
         connections.sendLoadGameToOne(session, gameData.game());
     }
 
-    private void makeMove(Session session, String username, MakeMoveCommand command) throws IOException {
-
-        //validate that the move is good?
-
-
-        var message = String.format("%s moved to %s", username, command.getMove().toString());
-        connections.broadcast(command.getAuthToken(), new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, message));
-//        connections.sendLoadGame();
+    private void makeMove(Session session, String username, MakeMoveCommand command) throws IOException, DataAccessException {
+        try {
+            GameData gameData = gameDAO.getGameByID(command.getGameID());
+            ChessGame game = gameData.game();
+            if (game.isGameOver()) {
+                connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: game already over"));
+                return;
+            }
+            ChessGame.TeamColor playerColor = getPlayerColor(username, gameData);
+            if (playerColor == null) {
+                connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: observers can't move"));
+                return;
+            }
+            if (game.getTeamTurn() != playerColor) {
+                connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: not your turn"));
+                return;
+            }
+            if (command.getMove().getStartPosition() != null) {
+                var piece = game.getBoard().getPiece(command.getMove().getStartPosition());
+                if (piece == null || piece.getTeamColor() != playerColor) {
+                    connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: not your piece"));
+                    return;
+                }
+            }
+            game.makeMove(command.getMove());
+            if (game.isInCheckmate(game.getTeamTurn())) {
+                game.setGameOver(true);
+            }
+            gameDAO.updateGame(command.getGameID(), gameData);
+            connections.sendLoadGame(command.getGameID(), game);
+            String message = username + " moved to " + command.getMove().toString();
+            connections.broadcast(command.getGameID(), command.getAuthToken(), new NotificationMessage(message));
+        } catch (Exception ex) {
+            connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: " + ex.getMessage()));
+        }
     }
 
     private void leaveGame(Session session, UserGameCommand command) {
