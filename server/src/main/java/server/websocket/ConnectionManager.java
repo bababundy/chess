@@ -1,10 +1,13 @@
 package server.websocket;
 
 import chess.ChessGame;
+import com.google.gson.Gson;
+import dataaccess.DAOFacade;
+import dataaccess.DataAccessException;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.Session;
-import websocket.messages.ServerMessage;
+import websocket.messages.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,12 +24,8 @@ public class ConnectionManager {
         connections.remove(conn.authToken);
     }
 
-    public void sendNotification(String msg) {
-
-    }
-
     void sendErrorMessage(RemoteEndpoint remote, ErrorMessage errorMessage) throws IOException {
-        remote.sendString(errorMessage.toString());
+        remote.sendString(new Gson().toJson(errorMessage));
     }
 
     public void sendLoadGameToOne(Session session, ChessGame game) throws IOException {
