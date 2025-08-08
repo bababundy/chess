@@ -1,28 +1,45 @@
 package server.websocket;
 
+import chess.ChessGame;
 import com.google.gson.Gson;
+import dataaccess.DAOFacade;
 import dataaccess.DataAccessException;
 import dataaccess.daointerfaces.AuthDAO;
-import dataaccess.mysql.MySqlAuthDao;
+import dataaccess.daointerfaces.GameDAO;
+import dataaccess.daointerfaces.UserDAO;
+import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import websocket.commands.MakeMoveCommand;
-import websocket.commands.UserGameCommand;
-import websocket.messages.ServerMessage;
+import org.eclipse.jetty.websocket.api.annotations.*;
+import websocket.commands.*;
+import websocket.messages.*;
 
 import java.io.IOException;
 
 @WebSocket
 public class WebSocketHandler {
     private final ConnectionManager connections = new ConnectionManager();
+    AuthDAO authDAO;
+    GameDAO gameDAO;
+    UserDAO userDAO;
+
+    public WebSocketHandler () {
+        authDAO = DAOFacade.authDAO;
+        gameDAO = DAOFacade.gameDAO;
+        userDAO = DAOFacade.userDAO;
+    }
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) throws IOException {
         try {
             UserGameCommand command = new Gson().fromJson(message, UserGameCommand.class);
-            AuthDAO auth = new MySqlAuthDao();
-            String username = (auth.getByToken(command.getAuthToken())).username();
+            String username = null;
+            try {
+                username = (authDAO.getByToken(command.getAuthToken())).username();
+            }
+            catch (Exception ex) {
+                connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: unauthorized"));
+                return;
+            }
             saveSession(command.getAuthToken(), command.getGameID(), session);
 
             switch (command.getCommandType()) {
@@ -39,6 +56,11 @@ public class WebSocketHandler {
         }
     }
 
+    @OnWebSocketClose
+    public void onClose(Session session, int statusCode, String reason) {
+        connections.connections.values().removeIf(c -> c.session.equals(session));
+    }
+
     private void saveSession(String authToken, Integer gameID, Session session) {
         connections.add(new Connection(authToken, gameID, session));
     }
@@ -48,14 +70,14 @@ public class WebSocketHandler {
     }
 
     private void connect(Session session, String username, UserGameCommand command) throws IOException, DataAccessException {
-        GameData game = DAOFacade.gameDAO.getGameByID(command.getGameID());
+        GameData game = gameDAO.getGameByID(command.getGameID());
         if (game == null) {
             throw new DataAccessException("Game not found");
         }
         connections.add(new Connection(command.getAuthToken(), command.getGameID(), session));
         var message = String.format("%s has joined the game", username);
         connections.broadcast(command.getGameID(), command.getAuthToken(), new NotificationMessage(message));
-        GameData gameData = DAOFacade.gameDAO.getGameByID(command.getGameID());
+        GameData gameData = gameDAO.getGameByID(command.getGameID());
         connections.sendLoadGameToOne(session, gameData.game());
     }
 
