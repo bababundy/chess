@@ -47,11 +47,16 @@ public class WebSocketHandler {
         connections.remove(new Connection(authToken, gameID, session));
     }
 
-    private void connect(Session session, String username, UserGameCommand command) throws IOException {
+    private void connect(Session session, String username, UserGameCommand command) throws IOException, DataAccessException {
+        GameData game = DAOFacade.gameDAO.getGameByID(command.getGameID());
+        if (game == null) {
+            throw new DataAccessException("Game not found");
+        }
         connections.add(new Connection(command.getAuthToken(), command.getGameID(), session));
         var message = String.format("%s has joined the game", username);
-        connections.broadcast(command.getAuthToken(), new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, message));
-//        connections.sendLoadGame();
+        connections.broadcast(command.getGameID(), command.getAuthToken(), new NotificationMessage(message));
+        GameData gameData = DAOFacade.gameDAO.getGameByID(command.getGameID());
+        connections.sendLoadGameToOne(session, gameData.game());
     }
 
     private void makeMove(Session session, String username, MakeMoveCommand command) throws IOException {

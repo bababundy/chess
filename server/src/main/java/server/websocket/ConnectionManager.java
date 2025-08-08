@@ -29,12 +29,16 @@ public class ConnectionManager {
         remote.sendString(errorMessage.toString());
     }
 
+    public void sendLoadGameToOne(Session session, ChessGame game) throws IOException {
+        session.getRemote().sendString(new Gson().toJson(new LoadGameMessage(game)));
+    }
+
     public void sendLoadGame(int gameID, ChessGame game) throws IOException {
         var removeList = new ArrayList<Connection>();
         for (var c : connections.values()) {
             if (c.session.isOpen()) {
                 if (c.gameID == (gameID)) {
-                    c.send(game.toString());
+                    c.send(new Gson().toJson(new LoadGameMessage(game)));
                 }
             } else {
                 removeList.add(c);
@@ -45,12 +49,12 @@ public class ConnectionManager {
         }
     }
 
-    public void broadcast(String excludeAuth, ServerMessage message) throws IOException {
+    public void broadcast(int gameID, String excludeAuth, NotificationMessage notification) throws IOException {
         var removeList = new ArrayList<Connection>();
         for (var c : connections.values()) {
             if (c.session.isOpen()) {
-                if (!c.authToken.equals(excludeAuth)) {
-                    c.send(message.toString());
+                if (!c.authToken.equals(excludeAuth) && c.gameID == gameID) {
+                    c.send(new Gson().toJson(notification));
                 }
             } else {
                 removeList.add(c);
