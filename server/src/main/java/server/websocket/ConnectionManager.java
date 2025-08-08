@@ -2,9 +2,6 @@ package server.websocket;
 
 import chess.ChessGame;
 import com.google.gson.Gson;
-import dataaccess.DAOFacade;
-import dataaccess.DataAccessException;
-import model.GameData;
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.Session;
 import websocket.messages.*;
@@ -20,8 +17,8 @@ public class ConnectionManager {
         connections.put(newConn.authToken, newConn);
     }
 
-    public void remove(Connection conn) {
-        connections.remove(conn.authToken);
+    public void remove(String authToken) {
+        connections.remove(authToken);
     }
 
     void sendErrorMessage(RemoteEndpoint remote, ErrorMessage errorMessage) throws IOException {
@@ -53,6 +50,7 @@ public class ConnectionManager {
         for (var c : connections.values()) {
             if (c.session.isOpen()) {
                 if (!c.authToken.equals(excludeAuth) && c.gameID == gameID) {
+                    System.out.printf("Broadcasting to: auth=%s, gameID=%d\n", c.authToken, c.gameID);
                     c.send(new Gson().toJson(notification));
                 }
             } else {
@@ -60,7 +58,26 @@ public class ConnectionManager {
             }
         }
         for (var c : removeList) {
+            System.out.printf("Session closed for auth=%s\n", c.authToken);
             connections.remove(c);
         }
     }
+
+    public void broadcastToAll(int gameID, NotificationMessage notification) throws IOException {
+        var removeList = new ArrayList<Connection>();
+        for (var c : connections.values()) {
+            if (c.session.isOpen()) {
+                if (c.gameID == gameID) {
+                    System.out.printf("Broadcasting to (ALL): auth=%s, gameID=%d\n", c.authToken, c.gameID);
+                    c.send(new Gson().toJson(notification));
+                }
+            } else {
+                removeList.add(c);
+            }
+        }
+        for (var c : removeList) {
+            connections.remove(c.authToken);
+        }
+    }
+
 }

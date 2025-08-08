@@ -65,8 +65,8 @@ public class WebSocketHandler {
         connections.add(new Connection(authToken, gameID, session));
     }
 
-    private void endSession(String authToken, Integer gameID, Session session) {
-        connections.remove(new Connection(authToken, gameID, session));
+    private void endSession(String authToken) {
+        connections.remove(authToken);
     }
 
     private void connect(Session session, String username, UserGameCommand command) throws IOException, DataAccessException {
@@ -118,38 +118,43 @@ public class WebSocketHandler {
         }
     }
 
-    private void leaveGame(Session session, UserGameCommand command) {
-
-
-        endSession(command.getAuthToken(), command.getGameID(), session);
+    private ChessGame.TeamColor getPlayerColor(String username, GameData game) {
+        if (username.equals(game.whiteUsername())) return ChessGame.TeamColor.WHITE;
+        if (username.equals(game.blackUsername())) return ChessGame.TeamColor.BLACK;
+        return null; // observer
     }
 
-    private void resign(Session session, String username, UserGameCommand command) {
-
-        endSession(command.getAuthToken(), command.getGameID(), session);
+    private void leaveGame(Session session, UserGameCommand command) throws IOException, DataAccessException {
+        String username = authDAO.getByToken(command.getAuthToken()).username();
+        String message = username + " has left the game";
+        connections.broadcast(command.getGameID(), command.getAuthToken(), new NotificationMessage(message));
+        endSession(command.getAuthToken());
     }
 
-//    private void enter(String visitorName, Session session) throws IOException {
-//        connections.add(visitorName, session);
-//        var message = String.format("%s is in the shop", visitorName);
-//        ServerMessage notification = new Notification(Notification.Type.ARRIVAL, message);
-//        connections.broadcast(visitorName, notification);
-//    }
-//
-//    private void exit(String visitorName) throws IOException {
-//        connections.remove(visitorName);
-//        var message = String.format("%s left the shop", visitorName);
-//        var notification = new Notification(Notification.Type.DEPARTURE, message);
-//        connections.broadcast(visitorName, notification);
-//    }
-//
-//    public void makeNoise(String petName, String sound) throws ResponseException {
-//        try {
-//            var message = String.format("%s says %s", petName, sound);
-//            var notification = new Notification(Notification.Type.NOISE, message);
-//            connections.broadcast("", notification);
-//        } catch (Exception ex) {
-//            throw new ResponseException(500, ex.getMessage());
-//        }
-//    }
+    private void resign(Session session, String username, UserGameCommand command) throws IOException, DataAccessException {
+        GameData gameData = gameDAO.getGameByID(command.getGameID());
+        ChessGame game = gameData.game();
+        if (game.isGameOver()) {
+            connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: game already over"));
+            return;
+        }
+        ChessGame.TeamColor playerColor = getPlayerColor(username, gameData);
+        if (playerColor == null) {
+            connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: observers can't resign"));
+            return;
+        }
+        game.setGameOver(true);
+        GameData updated = new GameData(
+                gameData.gameID(),
+                gameData.gameName(),
+                gameData.whiteUsername(),
+                gameData.blackUsername(),
+                game
+        );
+        gameDAO.updateGame(command.getGameID(), updated);
+        String msg = username + " has resigned from the game";
+        connections.broadcastToAll(command.getGameID(), new NotificationMessage(msg));
+        endSession(command.getAuthToken());
+    }
+
 }
