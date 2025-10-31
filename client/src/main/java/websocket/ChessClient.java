@@ -163,14 +163,21 @@ public class ChessClient extends ClientBase implements NotificationHandler {
     }
 
     private String resign() {
+        System.out.print("Are you sure you want to resign? (y/n): ");
+        String response = repl.readLine();
+        if (response == null || !response.trim().equalsIgnoreCase("y")) {
+            return SET_TEXT_COLOR_YELLOW + "Resign cancelled." + RESET_TEXT_COLOR;
+        }
+
         try {
             ws.resign(authToken, gameID);
             System.out.println(SET_TEXT_COLOR_YELLOW + "You resigned from the game." + RESET_TEXT_COLOR);
-            return leave(); // Reuse your existing `leave()` logic to exit the game properly
         } catch (IOException | ResponseException e) {
             return SET_TEXT_COLOR_RED + "Failed to resign: " + e.getMessage() + RESET_TEXT_COLOR;
         }
+        return "Error in resign";
     }
+
 
     private String move(String[] params) {
         if (params.length < 2 || params.length > 3) {
@@ -209,25 +216,20 @@ public class ChessClient extends ClientBase implements NotificationHandler {
         }
     }
 
-
     private ChessPosition parsePosition(String pos) {
-        if (pos == null || pos.length() != 2) throw new IllegalArgumentException("Invalid square: " + pos);
-        char file = Character.toLowerCase(pos.charAt(0)); // a..h
-        char rank = pos.charAt(1);                         // 1..8
+        if (pos == null || pos.length() != 2) {
+            throw new IllegalArgumentException("Invalid square: " + pos);
+        }
+        char file = Character.toLowerCase(pos.charAt(0)); // 'a'..'h'
+        char rank = pos.charAt(1);                         // '1'..'8'
         if (file < 'a' || file > 'h' || rank < '1' || rank > '8') {
             throw new IllegalArgumentException("Invalid square: " + pos);
         }
 
-        // Flip file mapping: a→h, b→g, ..., h→a
-        int flippedCol = 8 - (file - 'a'); // a→7, b→6, ..., h→0
-        int col = flippedCol;          // 1-indexed
-
-        int row = (rank - '0'); // ranks remain 1..8
-
+        int col = (file - 'a') + 1; // a→1, b→2, ..., h→8
+        int row = (rank - '0');     // '1'→1, ..., '8'→8
         return new ChessPosition(row, col);
     }
-
-
 
     private String leave() {
         if (ws != null) {
@@ -265,7 +267,7 @@ public class ChessClient extends ClientBase implements NotificationHandler {
 
             String squareColor = (checkerRow % 2 == 0) ? lightColor : darkColor;
             for (int i = 0; i < 8; i++) {
-                int col = (dir == -1) ? i : 7 - i; // your working column order
+                int col = (dir == 1) ? i : 7 - i; // your working column order
                 // alternate square color
                 squareColor = (Objects.equals(squareColor, darkColor)) ? lightColor : darkColor;
 
@@ -277,8 +279,8 @@ public class ChessClient extends ClientBase implements NotificationHandler {
 
                 String piece = board[row][col];
                 String pieceColor =
-                        "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_WHITE :
-                                "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_BLACK : letterColor;
+                        "♙♖♘♗♕♔".contains(piece) ? SET_TEXT_COLOR_LIGHT_GREY:
+                                "♟♜♞♝♛♚".contains(piece) ? SET_TEXT_COLOR_DARK_GREY : letterColor;
 
                 if (piece == null || piece.equals(" ")) {
                     System.out.print(bg + pieceColor + EMPTY);

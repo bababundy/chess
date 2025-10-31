@@ -1,6 +1,7 @@
 package server.websocket;
 
 import chess.ChessGame;
+import chess.ChessPosition;
 import com.google.gson.Gson;
 import dataaccess.DAOFacade;
 import dataaccess.DataAccessException;
@@ -114,16 +115,52 @@ public class WebSocketHandler {
                 }
             }
             game.makeMove(command.getMove());
-            if (game.isInCheckmate(game.getTeamTurn())) {
+
+            ChessGame.TeamColor sideToMove = game.getTeamTurn(); // opponent
+            String opponentName = usernameForColor(gameData, sideToMove);;
+
+            boolean checkmate = game.isInCheckmate(sideToMove);
+            boolean stalemate = false;
+            boolean check = false;
+
+            if (checkmate) {
                 game.setGameOver(true);
+            } else {
+                stalemate = game.isInStalemate(sideToMove);
+                if (stalemate) {
+                    game.setGameOver(true);
+                } else {
+                    check = game.isInCheck(sideToMove);
+                }
             }
             gameDAO.updateGame(command.getGameID(), gameData);
             connections.sendLoadGame(command.getGameID(), game);
-            String message = username + " moved to " + command.getMove().toString();
+            String message = username + " moved " + alg(command.getMove().getStartPosition())
+                    + " -> " + alg(command.getMove().getEndPosition());
             connections.broadcast(command.getGameID(), command.getAuthToken(), new NotificationMessage(message));
+
+            if (checkmate) {
+                String msg = "Checkmate! " + username + " has defeated " +
+                        (opponentName != null ? opponentName : sideToMove);
+                connections.broadcast(command.getGameID(), null, new NotificationMessage(msg));
+            } else if (stalemate) {
+                String msg = "Stalemate. The game is a draw.";
+                connections.broadcast(command.getGameID(), null, new NotificationMessage(msg));
+            } else if (check) {
+                String msg = "Check on " + (opponentName != null ? opponentName : sideToMove) + "!";
+                connections.broadcast(command.getGameID(), null, new NotificationMessage(msg));
+            }
         } catch (Exception ex) {
-            connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: General make move error" + ex.getMessage()));
+            connections.sendErrorMessage(session.getRemote(), new ErrorMessage("Error: invalid move"));
         }
+    }
+
+    private String usernameForColor(GameData game, ChessGame.TeamColor color) {
+        return (color == ChessGame.TeamColor.WHITE) ? game.whiteUsername() : game.blackUsername();
+    }
+
+    private String alg(ChessPosition p) {
+        return "" + (char)('a' + p.getColumn() - 1) + p.getRow();
     }
 
     private ChessGame.TeamColor getPlayerColor(String username, GameData game) {
